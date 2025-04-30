@@ -111,35 +111,42 @@ class SalesContractController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\SalesContract  $SalesContract
-     * @return \Illuminate\Http\Response
-     */
+    
     public function edit(SalesContract $SalesContract)
     {
-        //
+        return view('sales-contracts.edit', [
+            'contract' => $SalesContract,
+            'buyers' => Buyer::all()
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\SalesContract  $SalesContract
-     * @return \Illuminate\Http\Response
-     */
+   
     public function update(Request $request, SalesContract $SalesContract)
     {
-        //
+        $validatedData = $request->validate([
+            'buyer_id' => 'required',
+            'sales_contract_no' => 'required|unique:sales_contracts,sales_contract_no,' . $SalesContract->id,
+            'contract_date' => 'required|date',
+            'sales_contract_value' => 'required|numeric',
+            'quantity_pcs' => 'required|integer',
+        ]);
+
+        $buyerName = Buyer::where('id', $validatedData['buyer_id'])
+            ->value('name');
+
+        $SalesContract->update([
+            'buyer_id' => $validatedData['buyer_id'],
+            'buyer_name' => $buyerName,
+            'sales_contract_no' => $validatedData['sales_contract_no'],
+            'contract_date' => $validatedData['contract_date'],
+            'sales_contract_value' => $validatedData['sales_contract_value'],
+            'quantity_pcs' => $validatedData['quantity_pcs'],
+        ]);
+
+        return redirect()->route('sales-contracts.index')->with('success', 'Contract updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\SalesContract  $SalesContract
-     * @return \Illuminate\Http\Response
-     */
+  
     public function destroy(SalesContract $SalesContract)
     {
         //check if the contract has any related imports or exports
