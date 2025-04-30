@@ -14,104 +14,104 @@ class BuyerSeeder extends Seeder
      */
     public function run()
     { 
-        //1 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Sinsay'
-        ]);
-        //2 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Torray'
-        ]);
-        //3 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Original Marines'
-        ]);
-        //4 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Sportmaster'
-        ]);
-        //5 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'MQ'
-        ]);
-        //6 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Canadian Sportswear'
-        ]);
-        //7 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Sergent Major'
-        ]);
-        //8 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'MN Interfashion'
-        ]);
-        //9 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Vingino'
-        ]);
-        //10 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Nakata'
-        ]);
+        // //1 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Sinsay'
+        // ]);
+        // //2 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Torray'
+        // ]);
+        // //3 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Original Marines'
+        // ]);
+        // //4 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Sportmaster'
+        // ]);
+        // //5 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'MQ'
+        // ]);
+        // //6 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Canadian Sportswear'
+        // ]);
+        // //7 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Sergent Major'
+        // ]);
+        // //8 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'MN Interfashion'
+        // ]);
+        // //9 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Vingino'
+        // ]);
+        // //10 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Nakata'
+        // ]);
 
-        //11 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Wurth Modyf'
-        ]);
+        // //11 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Wurth Modyf'
+        // ]);
 
-        //12 TIL
-        Buyer::create([
-            'division_id' => 2,
-            'division_name' => 'Factory',
-            'company_id' => 2,
-            'company_name' => 'TIL',
-            'name' => 'Errea'
-        ]);
+        // //12 TIL
+        // Buyer::create([
+        //     'division_id' => 2,
+        //     'division_name' => 'Factory',
+        //     'company_id' => 2,
+        //     'company_name' => 'TIL',
+        //     'name' => 'Errea'
+        // ]);
 
 
 

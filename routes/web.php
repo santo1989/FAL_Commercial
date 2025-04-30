@@ -7,6 +7,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DivisionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalesContractController;
 use App\Http\Controllers\SalesExportController;
 use App\Http\Controllers\SalesImportController;
 use App\Http\Controllers\SupplierController;
@@ -41,6 +42,8 @@ Route::get('/get-company-designation/{divisionId}', [CompanyController::class, '
 
 Route::get('/get-department/{company_id}', [CompanyController::class, 'getdepartments'])->name('get_departments');
 
+Route::post('/buyers/update-list', [BuyerController::class, 'updateBuyersList'])
+    ->name('buyers_list_update');
 
 Route::middleware('auth')->group(function () {
     // Route::get('/check', function () {
@@ -120,17 +123,36 @@ Route::middleware('auth')->group(function () {
     Route::post('/suppliers/{supplier}/suppliers_active', [SupplierController::class, 'supplier_active'])->name('suppliers.active');
     Route::get('/get_supplier', [SupplierController::class, 'get_supplier'])->name('get_supplier');
 
-    //New
-    // Excel Import/Export Routes
+    //sales info
+    Route::resource('sales-contracts', SalesContractController::class);
+    Route::resource('sales-imports', SalesImportController::class);
+    Route::resource('sales-exports', SalesExportController::class);
+    // Add these routes
+    Route::post('/sales-contracts/{contract}/ud', [SalesContractController::class, 'storeUD'])->name('sales-contracts.ud.store');
+    Route::post('/sales-contracts/{contract}/revised', [SalesContractController::class, 'storeRevised'])->name('sales-contracts.revised.store');
+
+    // // Excel Import/Export Routes
+    // Route::prefix('excel')->group(function () {
+    //     // Imports
+    //     Route::get('import-template', [SalesExportController::class, 'downloadImportTemplate']);
+    //     Route::post('import-upload', [SalesExportController::class, 'processImportUpload'])->name('import.upload');
+    //     Route::post('import-confirm', [SalesExportController::class, 'confirmImport'])->name('import.confirm');
+
+    //     // Exports
+    //     Route::get('export-template', [SalesExportController::class, 'downloadExportTemplate']);
+    //     Route::post('export-upload', [SalesExportController::class, 'processExportUpload'])->name('export.upload');
+    //     Route::post('export-confirm', [SalesExportController::class, 'confirmExport'])->name('export.confirm');
+    // });
+
     Route::prefix('excel')->group(function () {
         // Imports
-        Route::get('import-template', [SalesExportController::class, 'downloadImportTemplate']);
-        Route::post('import-upload', [SalesExportController::class, 'processImportUpload'])->name('import.upload');
+        Route::get('import-template', [SalesExportController::class, 'downloadImportTemplate'])->name('excel.import-template');
+        Route::post('import-upload/{contract}', [SalesExportController::class, 'processImportUpload'])->name('import.upload');
         Route::post('import-confirm', [SalesExportController::class, 'confirmImport'])->name('import.confirm');
 
         // Exports
-        Route::get('export-template', [SalesExportController::class, 'downloadExportTemplate']);
-        Route::post('export-upload', [SalesExportController::class, 'processExportUpload'])->name('export.upload');
+        Route::get('export-template', [SalesExportController::class, 'downloadExportTemplate'])->name('excel.export-template');
+        Route::post('export-upload/{contract}', [SalesExportController::class, 'processExportUpload'])->name('export.upload');
         Route::post('export-confirm', [SalesExportController::class, 'confirmExport'])->name('export.confirm');
     });
 });

@@ -119,9 +119,23 @@
 
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
-                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href="{{ url('/excel/import-template') }} ">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href="{{ url('/sales-contracts') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Sales Contract
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href="{{ url('/sales-imports') }} ">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         import
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href="{{ url('/sales-exports') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Export
                                     </a>
 
                                 </div>

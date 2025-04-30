@@ -6,6 +6,8 @@ use App\Models\Buyer;
 use App\Models\Company;
 use App\Models\Division;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class BuyerController extends Controller
 {
@@ -143,5 +145,52 @@ class BuyerController extends Controller
     {
         $buyer = Buyer::where('company_id', $request->company_id)->get();
         return response()->json($buyer);
+    }
+
+    public function updateBuyersList()
+    {
+        try {
+            $response = Http::get('http://192.168.100.231:1008/buyers/all_buyer');
+
+            // dd($response->json());
+            // Check if the response is successful
+
+            if (!$response->successful()) {
+                throw new \Exception('Failed to fetch buyers from external API');
+            }
+
+            // 'division_id' => 2,
+            // 'division_name' => 'Factory',
+            // 'company_id' => 3,
+            // 'company_name' => 'FAL',
+
+            $externalBuyers = $response->json();
+
+            foreach ($externalBuyers as $externalBuyer) {
+                Buyer::updateOrCreate(
+                    [
+                        'division_id' => 2,
+                        'division_name' => 'Factory',
+                        'company_id' => 3,
+                        'company_name' => 'FAL',
+                        'name' => $externalBuyer['name']
+                    ],
+                    [
+                        'is_active' => $externalBuyer['is_active'] ?? true,
+                        // Add other fields if necessary
+                    ]
+                );
+            }
+
+            return response()->json([
+                'message' => 'Buyers list updated successfully',
+                'count' => count($externalBuyers)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Buyer update error: ' . $e->getMessage());
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

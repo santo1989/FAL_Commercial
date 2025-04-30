@@ -22,13 +22,14 @@ class CreateSalesImportsTable extends Migration
             $table->decimal('fabric_value', 15, 2)->default(0);
             $table->decimal('accessories_value', 15, 2)->default(0);
             $table->decimal('fabric_qty_kg', 15, 2)->default(0);
-            $table->decimal('accessories_qty', 15, 2)->default(0);$table->string('print_emb_qty')->default(0);
+            $table->decimal('accessories_qty', 15, 2)->default(0);
+            $table->string('print_emb_qty')->default(0);
             $table->decimal('print_emb_value', 15, 2)->default(0);
-            // $table->string('data_1')->nullable();
-            // $table->string('data_2')->nullable();
-            // $table->string('data_3')->nullable();
-            // $table->string('data_4')->nullable();
-            // $table->string('data_5')->nullable();
+            $table->string('data_1')->nullable();
+            $table->string('data_2')->nullable();
+            $table->string('data_3')->nullable();
+            $table->string('data_4')->nullable();
+            $table->string('data_5')->nullable();
             $table->timestamps();
         });
     }

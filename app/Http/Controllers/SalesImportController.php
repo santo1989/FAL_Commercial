@@ -7,79 +7,80 @@ use Illuminate\Http\Request;
 
 class SalesImportController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    
     public function index()
     {
-        //
+        $salesImports = SalesImport::with('contract')->paginate(10);
+        return view('sales-imports.index', compact('salesImports'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('sales-imports.create');
+        
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'contract_id' => 'required|exists:sales_contracts,id',
+            'btb_lc_no' => 'nullable|string|max:255',
+            'date' => 'nullable|date',
+            'description' => 'nullable|string|max:255',
+            'fabric_value' => 'required|numeric',
+            'accessories_value' => 'required|numeric',
+            'fabric_qty_kg' => 'required|numeric',
+            'accessories_qty' => 'required|numeric',
+            'print_emb_qty' => 'nullable|string|max:255',
+            'print_emb_value' => 'required|numeric',
+        ]);
+
+        SalesImport::create($validatedData);
+
+        return redirect()->route('sales-imports.index')->with('success', 'Sales Import created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\SalesImport  $salesImport
-     * @return \Illuminate\Http\Response
-     */
+   
     public function show(SalesImport $salesImport)
     {
-        //
+        return view('sales-imports.show', compact('salesImport'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\SalesImport  $salesImport
-     * @return \Illuminate\Http\Response
-     */
+ 
     public function edit(SalesImport $salesImport)
     {
-        //
+        return view('sales-imports.edit', compact('salesImport'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\SalesImport  $salesImport
-     * @return \Illuminate\Http\Response
-     */
+  
     public function update(Request $request, SalesImport $salesImport)
     {
-        //
+        $validatedData = $request->validate([
+            'contract_id' => 'required|exists:sales_contracts,id',
+            'btb_lc_no' => 'nullable|string|max:255',
+            'date' => 'nullable|date',
+            'description' => 'nullable|string|max:255',
+            'fabric_value' => 'required|numeric',
+            'accessories_value' => 'required|numeric',
+            'fabric_qty_kg' => 'required|numeric',
+            'accessories_qty' => 'required|numeric',
+            'print_emb_qty' => 'nullable|string|max:255',
+            'print_emb_value' => 'required|numeric',
+        ]);
+
+        $salesImport->update($validatedData);
+
+        return redirect()->route('sales-imports.index')->with('success', 'Sales Import updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\SalesImport  $salesImport
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy(SalesImport $salesImport)
     {
-        //
+
+        $salesImport->delete();
+        //return back with success message from where it came from
+        return redirect()->back()->withMessage('Sales Import deleted successfully.');
     }
+
+    
 }

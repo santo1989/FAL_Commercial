@@ -15,21 +15,25 @@ class CreateSalesContractsTable extends Migration
     {
         Schema::create('sales_contracts', function (Blueprint $table) {
             $table->id();
-            $table->string('buyer_name');
+            $table->string('buyer_name')->nullable();
+            $table->string('buyer_id')->nullable();
             $table->string('sales_contract_no')->unique();
             $table->date('contract_date');
-            $table->decimal('sales_cont_value', 18, 2);
-            $table->decimal('sales_contract_value', 18, 0);
-            $table->json('Revised_Contract_details');
-            $table->string('ud_no');
-            $table->string('ud_date');
-            $table->string('ud_value');
-            $table->string('ud_qty_pcs');
-            $table->string('bank_name');
-            $table->string('data_1');
-            $table->string('data_2');
-            $table->string('data_3');
-            $table->string('data_4'); 
+            $table->decimal('sales_cont_value', 18, 2)->default(0);
+            $table->decimal('sales_contract_value', 18, 0)->default(0);
+            $table->json('Revised_Contract_details')->nullable();
+            $table->json('revised_history')->nullable();
+            $table->string('quantity_pcs')->default(0);
+            $table->string('ud_no')->nullable();
+            $table->string('ud_date')->nullable();
+            $table->string('ud_value')->nullable();
+            $table->string('ud_qty_pcs')->nullable();
+            $table->string('bank_name')->nullable();
+            $table->json('ud_history')->nullable();
+            $table->string('data_1')->nullable();
+            $table->string('data_2')->nullable();
+            $table->string('data_3')->nullable();
+            $table->string('data_4')->nullable(); 
             $table->timestamps();
         });
     }

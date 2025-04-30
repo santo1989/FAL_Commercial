@@ -1,4 +1,4 @@
-<x-backend.layouts.master>
+{{-- <x-backend.layouts.master>
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -6,7 +6,7 @@
                 <div class="card-header">Confirm Duplicates</div>
 
                 <div class="card-body">
-                    @if(count($duplicates) > 0)
+                    @if (count($duplicates) > 0)
                         <form action="{{ $type === 'import' ? route('import.confirm') : route('export.confirm') }}" method="POST">
                             @csrf
                             <table class="table">
@@ -18,7 +18,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($duplicates as $index => $row)
+                                    @foreach ($duplicates as $index => $row)
                                     <tr>
                                         <td>
                                             <input type="checkbox" 
@@ -44,4 +44,35 @@
         </div>
     </div>
 </div>
+</x-backend.layouts.master> --}}
+
+<x-backend.layouts.master>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Confirm Duplicates</div>
+
+                    <div class="card-body">
+                        <form action="{{ $type === 'import' ? route('import.confirm') : route('export.confirm') }}"
+                            method="POST">
+                            @csrf
+                            <input type="hidden" name="contract_id" value="{{ Session::get('contract_id') }}">
+
+                            @foreach ($duplicates as $index => $row)
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="keep_ids[]" value="{{ $index }}">
+                                    </td>
+                                    <td>{{ $row[0] }}</td> <!-- Example field -->
+                                </tr>
+                            @endforeach
+
+                            <button type="submit">Confirm</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-backend.layouts.master>
