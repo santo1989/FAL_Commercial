@@ -209,33 +209,48 @@
 
 
                         </div>
+                        @php
+                            // merge history with current
+                            $allUd = collect($contract->ud_history ?? [])
+                                ->map(
+                                    fn($h) => [
+                                        'value' => $h['ud_value'],
+                                        'qty' => $h['ud_qty_pcs'],
+                                        'used' => $h['used_value'] ?? 0,
+                                    ],
+                                )
+                                ->push([
+                                    'value' => $contract->ud_value,
+                                    'qty' => $contract->ud_qty_pcs,
+                                    'used' => $contract->data_1,
+                                ]);
+
+                            $totals = [
+                                'value' => $allUd->sum('value'),
+                                'qty' => $allUd->sum('qty'),
+                                'used' => $allUd->sum('used'),
+                            ];
+                        @endphp
+
                         <table class="table table-bordered">
-                            <thead class="bg-light">
-                                @isset($contract)
-                                    <tr>
-                                        <th>UD No.</th>
-                                        <td>{{ $contract->ud_no }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>UD Date</th>
-                                        <td>{{ $contract->ud_date ? $contract->ud_date->format('d-M-Y') : 'N/A' }}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th>UD Value</th>
-                                        <td>${{ number_format($contract->ud_value, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>UD Value (Pcs)</th>
-                                        <td>{{ number_format($contract->ud_value_pcs) }} PCS</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Used Value (USD)</th>
-                                        <td></td>
-                                    </tr>
-                                @endisset
-                            </thead>
+                            <tr>
+                                <th>Total UD Value</th>
+                                <td>${{ number_format($totals['value'], 2) }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total UD Qty (PCS)</th>
+                                <td>{{ number_format($totals['qty']) }} PCS</td>
+                            </tr>
+                            <tr>
+                                <th>Total Used Value (USD)</th>
+                                <td>${{ number_format($totals['used'], 2) }}</td>
+                            </tr>
+                            <tr>
+                                <th>Bank Name (Current)</th>
+                                <td>{{ $contract->bank_name }}</td>
+                            </tr>
                         </table>
+
                         <!-- Add a 2 floating file upload buttons to upload the SalesExport excel file and the SalesImport file and save it to the database and back to this page -->
                         <!-- Add this to your Blade template -->
                         <div class="file-upload-buttons">
@@ -258,16 +273,17 @@
                                 <!-- Export Upload -->
                                 <button type="button" class="btn btn-info btn-md rounded-pill" data-bs-toggle="modal"
                                     data-bs-target="#exportModal">
-                                    <i class="fas fa-file-export me-2"></i> Export File Upload 
+                                    <i class="fas fa-file-export me-2"></i> Export File Upload
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Modals -->
+                        <!-- import Modals for upload file -->
                         <div class="modal fade" id="importModal" tabindex="-1">
                             <div class="modal-dialog">
                                 <div class="modal-content">
-                                   <form action="{{ route('import.upload', $contract->id) }}" method="POST" enctype="multipart/form-data" id="importForm">
+                                    <form action="{{ route('import.upload', $contract->id) }}" method="POST"
+                                        enctype="multipart/form-data" id="importForm">
                                         @csrf
                                         <div class="modal-header">
                                             <h5 class="modal-title">Upload BTB/Import Data</h5>
@@ -293,23 +309,24 @@
                                 </div>
                             </div>
                         </div>
-
+                        <!-- Export Modals for upload file -->
                         <div class="modal fade" id="exportModal" tabindex="-1">
                             <div class="modal-dialog">
                                 <div class="modal-content">
-                                    <form action="{{ route('export.upload', $contract->id) }}" method="POST" enctype="multipart/form-data" id="exportForm">
+                                    <form action="{{ route('export.upload', $contract->id) }}" method="POST"
+                                        enctype="multipart/form-data" id="exportForm">
                                         @csrf
                                         <div class="modal-header">
                                             <h5 class="modal-title">Upload Export File</h5>
                                             <button type="button" class="btn-close"
                                                 data-bs-dismiss="modal"></button>
                                         </div>
-                                        <div class="modal-body"> 
+                                        <div class="modal-body">
                                             <div class="mt-2">
                                                 <label for="file" class="form-label">Select Export File</label>
                                                 <input type="file" name="file" class="form-control"
                                                     accept=".xlsx, .xls" required>
-                                                
+
                                             </div>
                                         </div>
                                         <div class="modal-footer">
@@ -321,18 +338,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        {{-- <style>
-                            .file-upload-buttons {
-                                z-index: 1000;
-                            }
-
-                            .fixed-bottom {
-                                position: fixed;
-                                right: 0;
-                                bottom: 0;
-                            }
-                        </style> --}}
 
                     </div>
                 </div>
@@ -405,6 +410,10 @@
                         </table>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-danger" data-dismiss="modal"
+                            aria-label="Close">
+                            Close
+                        </button>
                         <button type="submit" class="btn btn-outline-primary">Save</button>
                     </div>
                 </form>
@@ -504,10 +513,20 @@
                                     <td><input type="number" name="used_value" class="form-control" step="0.01">
                                     </td>
                                 </tr>
+                                <tr>
+                                    <th>Bank Name</th>
+                                    <td>
+                                        <input type="text" name="bank_name" class="form-control" required>
+                                    </td>
+                                </tr>
                             </thead>
                         </table>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-danger" data-dismiss="modal"
+                            aria-label="Close">
+                            Close
+                        </button>
                         <button type="submit" class="btn btn-outline-primary">Save</button>
                     </div>
                 </form>
@@ -532,26 +551,23 @@
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Date Changed</th>
-                                        <th>UD Number</th>
+                                        <th>Changed At</th>
+                                        <th>UD No</th>
                                         <th>Value</th>
-                                        <th>Qty (PCS)</th>
-                                        <th>Changed By</th>
+                                        <th>Qty</th>
+                                        <th>Used</th>
+                                        <th>By</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (array_reverse($contract->ud_history) as $history)
+                                    @foreach (array_reverse($contract->ud_history ?? []) as $h)
                                         <tr>
-                                            <td>{{ $history['changed_at'] }}</td>
-                                            <td>{{ $history['ud_no'] }}</td>
-                                            <td>{{ number_format($history['ud_value'], 2) }}</td>
-                                            <td>{{ number_format($history['ud_qty_pcs']) }}</td>
-                                            <td>
-                                                @if ($history['changed_by'] ?? null)
-                                                    {{ App\Models\User::find($history['changed_by'])->name }}
-                                                @else
-                                                    System
-                                                @endif
+                                            <td>{{ $h['changed_at'] }}</td>
+                                            <td>{{ $h['ud_no'] }}</td>
+                                            <td>${{ number_format($h['ud_value'], 2) }}</td>
+                                            <td>{{ number_format($h['ud_qty_pcs']) }}</td>
+                                            <td>${{ number_format($h['used_value'] ?? 0, 2) }}</td>
+                                            <td>{{ optional(\App\Models\User::find($h['changed_by']))->name ?? 'System' }}
                                             </td>
                                         </tr>
                                     @endforeach

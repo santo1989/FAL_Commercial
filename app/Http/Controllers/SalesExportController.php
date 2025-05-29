@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\SalesExport;
 use Illuminate\Http\Request;
 use App\Models\SalesImport; 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\SalesImport as ImportSales;
 use App\Imports\SalesExport as ImportExports;
@@ -268,15 +270,17 @@ class SalesExportController extends Controller
     }
 
     // Update processExportUpload method
-    public function processExportUpload(Request $request, $contractId)
+
+    public function showExportConfirmation()
     {
-        $request->validate(['file' => 'required|mimes:xlsx,xls']);
+        // Retrieve session data
+        $duplicates = Session::get('duplicate_rows', []);
+        $contractId = Session::get('contract_id');
 
-        $exportData = Excel::toArray(new ImportExports, $request->file('file'))[0];
-
-        $duplicates = $this->findExportDuplicates($exportData, $contractId);
-        Session::put('export_data', $exportData);
-        Session::put('contract_id', $contractId);
+        // Validate session data
+        if (!$contractId || !Session::has('export_data')) {
+            return redirect()->back()->with('error', 'Session expired. Please upload the file again.');
+        }
 
         return view('imports.confirm-duplicates', [
             'duplicates' => $duplicates,
@@ -284,20 +288,119 @@ class SalesExportController extends Controller
         ]);
     }
 
-    // Update findExportDuplicates method
-    private function findExportDuplicates($data, $contractId)
+
+
+    public function processExportUpload(Request $request, $contractId)
     {
-        return collect($data)->filter(function ($row) use ($contractId) {
-            return SalesExport::where([
-                'contract_id' => $contractId,
-                'invoice_no' => $row['invoice_no'] ?? null,
-                'export_bill_no' => $row['export_bill_no'] ?? null,
-                'amount_usd' => $row['amount_usd_of_export_goods'] ?? 0,
-            ])->exists();
-        })->values();
+        $request->validate(['file' => 'required|mimes:xlsx,xls']);
+
+        $exportData = Excel::toArray(new ImportExports, $request->file('file'))[0];
+
+        // Normalize keys before processing
+        $exportData = $this->remapExportData($exportData);
+
+        $duplicateIndices = [];
+        $duplicateRows = [];
+
+        foreach ($exportData as $index => $row) {
+            if ($this->isExportDuplicate($row, $contractId)) {
+                $duplicateIndices[] = $index;
+                $duplicateRows[] = $row;
+            }
+        }
+
+        // Store data in session for confirmation page
+        Session::put('export_data', $exportData);
+        Session::put('duplicate_indices', $duplicateIndices);
+        Session::put('duplicate_rows', $duplicateRows);
+        Session::put('contract_id', $contractId);
+
+        // Redirect to confirmation page
+        return redirect()->route('export.confirmation');
     }
 
-    // Update mapExportData method
+
+    private function remapExportData($data)
+    {
+        $remapped = [];
+        foreach ($data as $row) {
+            $remapped[] = $this->normalizeRowKeys($row);
+        }
+        return $remapped;
+    }
+
+    private function normalizeRowKeys($row)
+    {
+        $normalized = [];
+        foreach ($row as $key => $value) {
+            $normalizedKey = strtolower(preg_replace('/[^a-z0-9]/i', '_', $key));
+            $normalizedKey = preg_replace('/_+/', '_', $normalizedKey);
+            $normalized[$normalizedKey] = $value;
+        }
+        return $normalized;
+    }
+
+    private function isExportDuplicate($row, $contractId)
+    {
+        return SalesExport::where([
+            'contract_id' => $contractId,
+            'invoice_no' => $row['invoice_no'] ?? null,
+            'export_bill_no' => $row['export_bill_no'] ?? null,
+            'amount_usd' => $this->parseDecimal($row['amount_usd_of_export_goods'] ?? 0),
+        ])->exists();
+    }
+
+    private function parseDecimal($value)
+    {
+        if (is_numeric($value)) {
+            return round(floatval($value), 2);
+        }
+
+        // Handle currency strings
+        $cleaned = str_replace(['$', ',', ' '], '', $value);
+        if (is_numeric($cleaned)) {
+            return round(floatval($cleaned), 2);
+        }
+
+        return 0.00;
+    }
+
+    public function confirmExport(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $data = Session::get('export_data');
+            $duplicateIndices = Session::get('duplicate_indices', []);
+            $contractId = Session::get('contract_id');
+            $keepIds = $request->keep_ids ?? [];
+
+            // Filter out duplicates that weren't selected
+            $filtered = [];
+            foreach ($data as $index => $row) {
+                if (in_array($index, $duplicateIndices) && !in_array($index, $keepIds)) {
+                    continue;
+                }
+                $filtered[] = $row;
+            }
+
+            // Import filtered data
+            SalesExport::insert($this->mapExportData($filtered, $contractId));
+
+            // Clear session
+            Session::forget(['export_data', 'duplicate_indices', 'duplicate_rows', 'contract_id']);
+
+            DB::commit();
+
+            return redirect()->route('sales-contracts.show', $contractId)
+                ->with('success', 'Export data imported successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
     private function mapExportData($data, $contractId)
     {
         return collect($data)->map(function ($row) use ($contractId) {
@@ -305,27 +408,16 @@ class SalesExportController extends Controller
                 'contract_id' => $contractId,
                 'invoice_no' => $row['invoice_no'] ?? null,
                 'export_bill_no' => $row['export_bill_no'] ?? null,
-                'amount_usd' => $row['amount_usd_of_export_goods'] ?? 0,
-                'realized_value' => $row['amount_usd_realised'] ?? 0,
-                'g_qty_pcs' => $row['g_qty_pcs'] ?? 0,
-                'date_of_realized' => isset($row['date_of_realised']) ? Carbon::parse($row['date_of_realised']) : null,
-                'due_amount_usd' => $row['due_amount_usd'] ?? 0,
+                'amount_usd' => $this->parseDecimal($row['amount_usd_of_export_goods'] ?? 0),
+                'realized_value' => $this->parseDecimal($row['amount_usd_realised'] ?? 0),
+                'g_qty_pcs' => intval($row['g_qty_pcs'] ?? 0),
+                'date_of_realized' => isset($row['date_of_realised']) && $row['date_of_realised']
+                    ? Carbon::parse($row['date_of_realised'])->toDateString()
+                    : null,
+                'due_amount_usd' => $this->parseDecimal($row['due_amount_usd'] ?? 0),
                 'created_at' => now(),
                 'updated_at' => now()
             ];
         })->toArray();
-    }
-
-    // Update confirmExport method
-    public function confirmExport(Request $request)
-    {
-        $data = Session::get('export_data');
-        $contractId = Session::get('contract_id');
-        $filtered = $this->filterData($data, $request->keep_ids);
-
-        SalesExport::insert($this->mapExportData($filtered, $contractId));
-        Session::forget(['export_data', 'contract_id']);
-
-        return redirect()->route('sales-contracts.show', $contractId)->with('success', 'Export data imported successfully.');
     }
 }

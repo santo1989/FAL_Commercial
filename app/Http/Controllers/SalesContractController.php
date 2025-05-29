@@ -9,11 +9,62 @@ use Illuminate\Support\Facades\DB;
 
 class SalesContractController extends Controller
 {
-    public function index()
+    // public function index()
+    // {
+    //     return view('sales-contracts.index', [
+    //         'contracts' => SalesContract::with(['imports', 'exports'])->paginate(10)
+    //     ]);
+    // }
+
+    public function index(Request $request)
     {
-        return view('sales-contracts.index', [
-            'contracts' => SalesContract::with(['imports', 'exports'])->paginate(10)
-        ]);
+        // Start a new query on the SalesContract model
+        $query = SalesContract::query();
+
+        // Eager‐load your relations
+        $query->with(['imports', 'exports']);
+
+        // Apply buyer filter
+        if ($request->filled('buyer_id')) {
+            $query->where('buyer_id', $request->buyer_id);
+        }
+
+        // Apply contract number filter
+        if ($request->filled('contract_no')) {
+            $query->where('sales_contract_no', $request->contract_no);
+        }
+
+        // Apply exact contract date filter from start date to end date
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('contract_date', [
+                $request->contract_date_from,
+                $request->contract_date_to
+            ]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('contract_date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('contract_date', '<=', $request->contract_date_to);
+        }
+
+        // Apply generic search across multiple fields
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%")
+                    // add more orWhere() clauses here for other searchable columns
+                ;
+            });
+        }
+
+        // Paginate & append all query parameters so links keep filters
+        $contracts = $query
+            ->orderBy('contract_date', 'desc')    // optional: default sort
+            ->paginate(10)
+            ->appends($request->all());
+
+        // Pass filtered & paginated result to the view
+        return view('sales-contracts.index', compact('contracts'));
     }
 
     public function create()
@@ -160,43 +211,47 @@ class SalesContractController extends Controller
     public function storeUD(Request $request, SalesContract $contract)
     {
         $validated = $request->validate([
-            'ud_no' => 'required|string',
-            'ud_date' => 'required|date',
-            'ud_value' => 'required|numeric',
-            'ud_value_pcs' => 'required|integer',
-            'used_value' => 'nullable|numeric'
+            'ud_no'         => 'required|string',
+            'ud_date'       => 'required|date',
+            'ud_value'      => 'required|numeric',
+            'ud_value_pcs'  => 'required|integer',
+            'used_value'    => 'nullable|numeric',
+            'bank_name'     => 'nullable|string',
         ]);
 
-        $updateData = [
-            'ud_no' => $validated['ud_no'],
-            'ud_date' => $validated['ud_date'],
-            'ud_value' => $validated['ud_value'],
-            'ud_qty_pcs' => $validated['ud_value_pcs'],
-            'used_value' => $validated['used_value'],
-        ];
+        // 1) Build up the history array (existing + snapshot if any)
+        $history = $contract->ud_history ?? [];
 
-        // Check for related data and if UD is actually changing
-        if (($contract->imports()->exists() || $contract->exports()->exists()) && $contract->isDirty($updateData)) {
-            $currentUD = [
-                'ud_no' => $contract->ud_no,
-                'ud_date' => optional($contract->ud_date)->toDateString(),
-                'ud_value' => $contract->ud_value,
-                'ud_qty_pcs' => $contract->ud_qty_pcs,
-                'used_value' => $contract->used_value,
-                'changed_at' => now()->toDateTimeString(),
-                'changed_by' => auth()->id(), // If using authentication
+        // Only snapshot if there was a previous UD
+        if ($contract->ud_no !== null) {
+            $history[] = [
+                'ud_no'       => $contract->ud_no,
+                'ud_date'     => $contract->ud_date->toDateString(),
+                'ud_value'    => $contract->ud_value,
+                'ud_qty_pcs'  => $contract->ud_qty_pcs,
+                'used_value'  => $contract->data_1,
+                'bank_name'   => $contract->bank_name,
+                'changed_at'  => now()->toDateTimeString(),
+                'changed_by'  => auth()->id(),
             ];
-
-            $udHistory = $contract->ud_history ?? [];
-            array_push($udHistory, $currentUD);
-            $updateData['ud_history'] = $udHistory;
         }
 
-        $contract->update($updateData);
+        // 2) Overwrite the “live” UD fields + history
+        $contract->ud_history    = $history;
+        $contract->ud_no         = $validated['ud_no'];
+        $contract->ud_date       = $validated['ud_date'];
+        $contract->ud_value      = $validated['ud_value'];
+        $contract->ud_qty_pcs    = $validated['ud_value_pcs'];
+        $contract->data_1        = $validated['used_value'] ?? 0;
+        $contract->bank_name     = $validated['bank_name'] ?? null;
 
-        return redirect()->back()->with('success', 'UD details updated!');
+        // 3) Save everything in one go
+        $contract->save();
+
+        return back()->with('success', 'UD details updated!');
     }
-   
+
+
 
     public function storeRevised(Request $request, SalesContract $contract)
     {

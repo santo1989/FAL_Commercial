@@ -9,7 +9,14 @@ class SalesContract extends Model
 {
     use HasFactory;
     protected $guarded = [];
-
+    protected $casts = [
+        // other casts...
+        'ud_history'      => 'array',    // ← tell Laravel this is JSON
+        'revised_history' => 'array',
+        'ud_date'         => 'date',
+        'contract_date'   => 'date',
+    ];
+   
     public function imports() // Changed from salesImport()
     {
         return $this->hasMany(SalesImport::class, 'contract_id');

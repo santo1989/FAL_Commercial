@@ -150,11 +150,20 @@ Route::middleware('auth')->group(function () {
         Route::post('import-upload/{contract}', [SalesExportController::class, 'processImportUpload'])->name('import.upload');
         Route::post('import-confirm', [SalesExportController::class, 'confirmImport'])->name('import.confirm');
 
+
+
         // Exports
         Route::get('export-template', [SalesExportController::class, 'downloadExportTemplate'])->name('excel.export-template');
         Route::post('export-upload/{contract}', [SalesExportController::class, 'processExportUpload'])->name('export.upload');
         Route::post('export-confirm', [SalesExportController::class, 'confirmExport'])->name('export.confirm');
     });
+
+
+    // routes/web.php
+
+    Route::get('/export/confirmation', [SalesExportController::class, 'showExportConfirmation'])
+        ->name('export.confirmation');
+
 });
 
 

@@ -18,6 +18,54 @@
     </div>
 
     <div class="card">
+        <!--card heard for searching and filtering-->
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Search and Filter</h5>
+            <form action="{{ route('sales-contracts.index') }}" method="GET" class="form-inline">
+                {{-- <input type="text" name="buyer_name" class="form-control mr-2" placeholder="Buyer Name" value="{{ request('buyer_name') }}"> --}}
+                <select name="buyer_id" class="form-control mr-2">
+                    @php
+                        $buyers = \App\Models\SalesContract::select('buyer_id')->distinct()->get(); // Fetch all distinct buyer IDs from the contracts
+                        $buyers = \App\Models\Buyer::whereIn('id', $buyers)->get(); // Fetch all buyers based on the distinct IDs
+                         // Fetch all buyers from the database
+                        $selectedBuyer = request('buyer_id'); // Get the selected buyer ID from the request
+                    @endphp
+                    <option value="">Select Buyer</option>
+                    @foreach($buyers as $buyer)
+                        <option value="{{ $buyer->id }}" {{ (request('buyer_id') == $buyer->id) ? 'selected' : '' }}>
+                            {{ $buyer->name }}
+                        </option>
+                    @endforeach
+                </select>
+                {{-- <input type="text" name="contract_no" class="form-control mr-2" placeholder="Contract No." value="{{ request('contract_no') }}"> --}}
+                @php
+                    $Sales_contracts = \App\Models\SalesContract::select('sales_contract_no')->distinct()->get(); // Fetch all distinct contract numbers from the contracts
+                    $Sales_contracts = \App\Models\SalesContract::whereIn('sales_contract_no', $Sales_contracts)->get(); // Fetch all contracts based on the distinct numbers
+                @endphp
+                <select name="contract_no" class="form-control mr-2">
+                    <option value="">Select Contract No.</option>
+                    @foreach($Sales_contracts as $contract)
+                        <option value="{{ $contract->sales_contract_no }}" {{ (request('contract_no') == $contract->sales_contract_no) ? 'selected' : '' }}>
+                            {{ $contract->sales_contract_no }}
+                        </option>
+                    @endforeach
+                </select>
+                {{-- <input type="date" name="contract_date" class="form-control mr-2" placeholder="Contract Date" value="{{ request('contract_date') }}"> --}}
+                <!--date range filter-->
+                <label for="contract_date_to" class="mr-2">Start Date:</label>
+                <input type="date" name="contract_date_to" class="form-control mr-2" placeholder="Start Date" value="{{ request('contract_date_to') }}">
+                <label for="contract_date_from" class="mr-2">End Date:</label>
+                <input type="date" name="contract_date_from" class="form-control mr-2" placeholder="End Date" value="{{ request('contract_date_from') }}">
+
+                <input type="text" name="search" class="form-control mr-2" placeholder="Search by buyer name, contract no"
+                 value="{{ request('search') }}">
+                <button type="submit" class="btn btn-light">Search</button>
+            </form>
+            <!--reset--filter button-->
+            <form action="{{ route('sales-contracts.index') }}" method="GET" class="form-inline">
+                <button type="submit" class="btn btn-light ml-2">Reset Filter</button>
+            </form>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover table-striped">

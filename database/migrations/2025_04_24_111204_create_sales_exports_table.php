@@ -24,6 +24,9 @@ class CreateSalesExportsTable extends Migration
             $table->date('date_of_realized')->nullable();
             $table->decimal('due_amount_usd', 15, 2)->default(0);
             $table->timestamps();
+
+            // Add composite index for duplicate detection
+            $table->index(['contract_id', 'invoice_no', 'export_bill_no', 'amount_usd'], 'export_duplicate_check');
         });
     }
 
