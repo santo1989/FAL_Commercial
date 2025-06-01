@@ -146,9 +146,12 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('excel')->group(function () {
         // Imports
-        Route::get('import-template', [SalesExportController::class, 'downloadImportTemplate'])->name('excel.import-template');
-        Route::post('import-upload/{contract}', [SalesExportController::class, 'processImportUpload'])->name('import.upload');
-        Route::post('import-confirm', [SalesExportController::class, 'confirmImport'])->name('import.confirm');
+        Route::get('import-template', [SalesImportController::class, 'downloadImportTemplate'])->name('excel.import-template');
+        Route::post('import-upload/{contract}', [SalesImportController::class, 'processImportUpload'])->name('import.upload');
+
+        // Import routes
+        Route::post('/import/confirm', [SalesImportController::class, 'confirmImport'])->name('import.confirm');
+        Route::get('/import/confirmation', [SalesImportController::class, 'showImportConfirmation'])->name('import.confirmation');
 
 
 

@@ -8,7 +8,6 @@ use App\Models\SalesImport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\SalesImport as ImportSales;
 use App\Imports\SalesExport as ImportExports;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -89,170 +88,14 @@ class SalesExportController extends Controller
 
     
 
-    // Download Templates
-    public function downloadImportTemplate()
-    {
-        
-        //find the file prom public\templates\import_template.xlsx and download it
-        return response()->download(public_path('templates/import_template.xlsx'));
-    }
-
-  
-
-    // Handle File Uploads
-    public function processImportUpload(Request $request, $contractId)
-    {
-        $request->validate(['file' => 'required|mimes:xlsx,xls']);
-
-        $importData = Excel::toArray(new ImportSales, $request->file('file'))[0];
-
-        $duplicates = collect($importData)->filter(function ($row) use ($contractId) {
-            return SalesImport::where([
-                'contract_id' => $contractId,
-                'btb_lc_no' => $row['btb_lc_no'] ?? null,
-                'date' => isset($row['date']) ? Carbon::parse($row['date']) : null,
-                'fabric_value' => $row['fabric_value'] ?? 0,
-                'accessories_value' => $row['accessories_value'] ?? 0,
-                'fabric_qty_kg' => $row['fabric_qty_in_kgs'] ?? 0,
-                'accessories_qty' => $row['accessories_qty'] ?? 0,
-                'print_emb_qty' => $row['printing_embroidery_qty'] ?? 0,
-                'print_emb_value' => $row['printing_embroidery_value'] ?? 0
-            ])->exists();
-        });
-
-        Session::put('import_data', $importData);
-        Session::put('contract_id', $contractId);
-
-        return view('imports.confirm-duplicates', [
-            'duplicates' => $duplicates,
-            'type' => 'import'
-        ]);
-    }
-
-    private function mapImportData($data, $contractId)
-    {
-        return $data->map(function ($row) use ($contractId) {
-            return [
-                'contract_id' => $contractId,
-                'btb_lc_no' => $row['btb_lc_no'] ?? null,
-                'date' => isset($row['date']) ? Carbon::parse($row['date']) : null,
-                'description' => $row['description'] ?? 'No description',
-                'fabric_value' => $row['fabric_value'] ?? 0,
-                'accessories_value' => $row['accessories_value'] ?? 0,
-                'fabric_qty_kg' => $row['fabric_qty_in_kgs'] ?? 0,
-                'accessories_qty' => $row['accessories_qty'] ?? 0,
-                'print_emb_qty' => $row['printing_embroidery_qty'] ?? 0,
-                'print_emb_value' => $row['printing_embroidery_value'] ?? 0,
-                'created_at' => now(),
-                'updated_at' => now()
-            ];
-        })->toArray();
-    }
-
+   // Excel upload Handling
     public function downloadExportTemplate()
     {
         return response()->download(public_path('templates/export_template.xlsx'));
     }
 
-    // public function processExportUpload(Request $request)
-    // {
-    //     $request->validate(['file' => 'required|mimes:xlsx,xls']);
-
-    //     $exportData = Excel::toArray(new ImportExports, $request->file('file'))[0];
-    //     $headers = array_shift($exportData);
-
-    //     $duplicates = $this->findExportDuplicates($exportData);
-    //     Session::put('export_data', $exportData);
-
-    //     return view('imports.confirm-duplicates', [
-    //         'duplicates' => $duplicates,
-    //         'type' => 'export'
-    //     ]);
-    // }
-
-    // Duplicate Handling
-    private function findImportDuplicates($data)
-    {
-        return collect($data)->filter(function ($row) {
-            return SalesImport::where([
-                'contract_id' => $row[0],
-                'btb_lc_no' => $row[1],
-                'date' => $row[2],
-                'fabric_value' => $row[4]
-            ])->exists();
-        })->values();
-    }
-
-    // private function findExportDuplicates($data)
-    // {
-    //     return collect($data)->filter(function ($row) {
-    //         return SalesExport::where([
-    //             'contract_id' => $row[0],
-    //             'invoice_no' => $row[1],
-    //             'export_bill_no' => $row[2],
-    //             'amount_usd' => $row[3]
-    //         ])->exists();
-    //     })->values();
-    // }
-
-    // public function confirmExport(Request $request)
-    // {
-    //     $data = Session::get('export_data');
-    //     $filtered = $this->filterData($data, $request->keep_ids);
-
-    //     SalesExport::insert($this->mapExportData($filtered));
-    //     Session::forget('export_data');
-
-    //     return redirect()->route('sales-exports.index')->with('success', 'Data imported successfully');
-    // }
-
-    // Helper Methods
-    private function filterData($data, $keepIds)
-    {
-        return collect($data)->filter(function ($row, $index) use ($keepIds) {
-            return !in_array($index, $keepIds ?? []);
-        })->values();
-    }
-
-    // private function mapImportData($data)
-    // {
-    //     return collect($data)->map(function ($row) {
-    //         return [
-    //             'contract_id' => $row[0],
-    //             'btb_lc_no' => $row[1],
-    //             'date' => $row[2],
-    //             'description' => $row[3],
-    //             'fabric_value' => $row[4],
-    //             'accessories_value' => $row[5],
-    //             'fabric_qty_kg' => $row[6],
-    //             'accessories_qty' => $row[7],
-    //             'print_emb_qty' => $row[8],
-    //             'print_emb_value' => $row[9],
-    //             'created_at' => now(),
-    //             'updated_at' => now()
-    //         ];
-    //     })->toArray();
-    // }
-
-    // private function mapExportData($data)
-    // {
-    //     return collect($data)->map(function ($row) {
-    //         return [
-    //             'contract_id' => $row[0],
-    //             'invoice_no' => $row[1],
-    //             'export_bill_no' => $row[2],
-    //             'amount_usd' => $row[3],
-    //             'realized_value' => $row[4],
-    //             'g_qty_pcs' => $row[5],
-    //             'date_of_realized' => $row[6],
-    //             'due_amount_usd' => $row[7],
-    //             'created_at' => now(),
-    //             'updated_at' => now()
-    //         ];
-    //     })->toArray();
-    // }
-
- 
+    
+   
 
     public function confirmImport(Request $request)
     {
@@ -340,16 +183,6 @@ class SalesExportController extends Controller
         return $normalized;
     }
 
-    private function isExportDuplicate($row, $contractId)
-    {
-        return SalesExport::where([
-            'contract_id' => $contractId,
-            'invoice_no' => $row['invoice_no'] ?? null,
-            'export_bill_no' => $row['export_bill_no'] ?? null,
-            'amount_usd' => $this->parseDecimal($row['amount_usd_of_export_goods'] ?? 0),
-        ])->exists();
-    }
-
     private function parseDecimal($value)
     {
         if (is_numeric($value)) {
@@ -401,6 +234,16 @@ class SalesExportController extends Controller
         }
     }
 
+    private function isExportDuplicate($row, $contractId)
+    {
+        return SalesExport::where([
+            'contract_id' => $contractId,
+            'invoice_no' => $row['invoice_no'] ?? null,
+            'export_bill_no' => $row['export_bill_no'] ?? null,
+            'amount_usd' => $this->parseDecimal($row['amount'] ?? 0),
+        ])->exists();
+    }
+
     private function mapExportData($data, $contractId)
     {
         return collect($data)->map(function ($row) use ($contractId) {
@@ -408,16 +251,34 @@ class SalesExportController extends Controller
                 'contract_id' => $contractId,
                 'invoice_no' => $row['invoice_no'] ?? null,
                 'export_bill_no' => $row['export_bill_no'] ?? null,
-                'amount_usd' => $this->parseDecimal($row['amount_usd_of_export_goods'] ?? 0),
-                'realized_value' => $this->parseDecimal($row['amount_usd_realised'] ?? 0),
-                'g_qty_pcs' => intval($row['g_qty_pcs'] ?? 0),
-                'date_of_realized' => isset($row['date_of_realised']) && $row['date_of_realised']
-                    ? Carbon::parse($row['date_of_realised'])->toDateString()
-                    : null,
-                'due_amount_usd' => $this->parseDecimal($row['due_amount_usd'] ?? 0),
+                'amount_usd' => $this->parseDecimal($row['amount'] ?? 0),
+                'realized_value' => $this->parseDecimal($row['realized_value'] ?? 0),
+                'g_qty_pcs' => intval($row['quantity'] ?? 0),
+                'date_of_realized' => $this->parseExportDate($row['date_of_realised'] ?? $row['realized_date'] ?? null),
+                'due_amount_usd' => $this->parseDecimal($row['due_amount'] ?? 0),
                 'created_at' => now(),
                 'updated_at' => now()
             ];
         })->toArray();
+    }
+
+    private function parseExportDate($value)
+    {
+        if (empty($value)) return null;
+
+        try {
+            // Handle Excel numeric dates
+            if (is_numeric($value)) {
+                return Carbon::createFromFormat('Y-m-d', '1900-01-01')
+                    ->addDays(intval($value) - 2);
+            }
+            // Handle string formats
+            if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $value)) {
+                return Carbon::createFromFormat('Y-m-d', $value);
+            }
+            return Carbon::parse($value);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

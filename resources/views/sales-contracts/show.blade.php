@@ -389,22 +389,22 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th>Revised No.</th>
-                                    <td><input type="text" name="ud_no" class="form-control" required></td>
+                                    <td><input type="text" name="Revised_no" class="form-control" required></td>
                                 </tr>
                                 <tr>
                                     <th>Revised Date</th>
                                     <td>
-                                        <input type="date" name="ud_date" class="form-control" required>
+                                        <input type="date" name="Revised_date" class="form-control" required>
                                     </td>
                                 </tr>
                                 <tr>
                                     <th>Revised Value</th>
-                                    <td><input type="number" name="ud_value" class="form-control" step="0.01"
+                                    <td><input type="number" name="Revised_value" class="form-control" step="0.01"
                                             required></td>
                                 </tr>
                                 <tr>
                                     <th>Revised Qty (Pcs)</th>
-                                    <td><input type="number" name="ud_qty_pcs" class="form-control" required></td>
+                                    <td><input type="number" name="Revised_qty_pcs" class="form-control" required></td>
                                 </tr>
                             </thead>
                         </table>
@@ -438,27 +438,20 @@
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Date Changed</th>
+                                        
                                         <th>Revised Number</th>
                                         <th>Value</th>
                                         <th>Qty (PCS)</th>
-                                        <th>Changed By</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (array_reverse($contract->revised_history) as $history)
                                         <tr>
-                                            <td>{{ $history['changed_at'] }}</td>
-                                            <td>{{ $history['ud_no'] }}</td>
-                                            <td>{{ number_format($history['ud_value'], 2) }}</td>
-                                            <td>{{ number_format($history['ud_qty_pcs']) }}</td>
-                                            <td>
-                                                @if ($history['changed_by'] ?? null)
-                                                    {{ App\Models\User::find($history['changed_by'])->name }}
-                                                @else
-                                                    System
-                                                @endif
-                                            </td>
+                                            
+                                            <td>{{ $history['Revised_no'] }}</td>
+                                            <td>{{ number_format($history['Revised_value'], 2) }}</td>
+                                            <td>{{ number_format($history['Revised_qty_pcs']) }}</td>
+                                            
                                         </tr>
                                     @endforeach
                                 </tbody>

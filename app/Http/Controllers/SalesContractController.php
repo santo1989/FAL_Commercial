@@ -242,7 +242,7 @@ class SalesContractController extends Controller
         $contract->ud_date       = $validated['ud_date'];
         $contract->ud_value      = $validated['ud_value'];
         $contract->ud_qty_pcs    = $validated['ud_value_pcs'];
-        $contract->data_1        = $validated['used_value'] ?? 0;
+        $contract->used_value        = $validated['used_value'] ?? 0;
         $contract->bank_name     = $validated['bank_name'] ?? null;
 
         // 3) Save everything in one go
@@ -256,20 +256,31 @@ class SalesContractController extends Controller
     public function storeRevised(Request $request, SalesContract $contract)
     {
         $validated = $request->validate([
-            'ud_no' => 'required|string',
-            'ud_date' => 'required|date',
-            'ud_value' => 'required|numeric',
-            'ud_qty_pcs' => 'required|integer',
+            'Revised_no' => 'required|string',
+            'Revised_date' => 'required|date',
+            'Revised_value' => 'required|numeric',
+            'Revised_qty_pcs' => 'required|integer',
         ]);
 
-        $contract->update([
-            'Revised_Contract_details' => [
-                'ud_no' => $validated['ud_no'],
-                'ud_date' => $validated['ud_date'],
-                'ud_value' => $validated['ud_value'],
-                'ud_qty_pcs' => $validated['ud_qty_pcs'],
-            ]
-        ]);
+        $history = $contract->revised_history ?? [];
+
+        if ($contract->Revised_no !== null) {
+            $history[] = [
+                'Revised_no'       => $contract->Revised_no,
+                'Revised_date'     => $contract->Revised_date, // Fixed: use string directly
+                'Revised_value'    => $contract->Revised_value,
+                'Revised_qty_pcs'  => $contract->Revised_qty_pcs,
+            ];
+        }
+
+        // Assign to the correct attribute
+        $contract->revised_history = $history; // Corrected attribute name
+        $contract->Revised_no      = $validated['Revised_no'];
+        $contract->Revised_date    = $validated['Revised_date'];
+        $contract->Revised_value   = $validated['Revised_value'];
+        $contract->Revised_qty_pcs = $validated['Revised_qty_pcs'];
+
+        $contract->save();
 
         return redirect()->back()->with('success', 'Revised details updated!');
     }

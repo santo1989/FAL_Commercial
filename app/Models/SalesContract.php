@@ -15,6 +15,7 @@ class SalesContract extends Model
         'revised_history' => 'array',
         'ud_date'         => 'date',
         'contract_date'   => 'date',
+        'Revised_Contract_details' => 'array', // Also cast other JSON fields if needed
     ];
    
     public function imports() // Changed from salesImport()

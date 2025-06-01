@@ -24,16 +24,20 @@ class CreateSalesContractsTable extends Migration
             $table->json('Revised_Contract_details')->nullable();
             $table->json('revised_history')->nullable();
             $table->string('quantity_pcs')->default(0);
+            $table->string('Revised_no')->nullable();
+            $table->string('Revised_date')->nullable();
+            $table->string('Revised_value')->nullable();
+            $table->string('Revised_qty_pcs')->nullable();
             $table->string('ud_no')->nullable();
             $table->string('ud_date')->nullable();
             $table->string('ud_value')->nullable();
             $table->string('ud_qty_pcs')->nullable();
             $table->string('bank_name')->nullable();
+            $table->string('used_value')->nullable();
             $table->json('ud_history')->nullable();
-            $table->string('data_1')->nullable();
             $table->string('data_2')->nullable();
             $table->string('data_3')->nullable();
-            $table->string('data_4')->nullable(); 
+            $table->string('data_4')->nullable();
             $table->timestamps();
         });
     }
