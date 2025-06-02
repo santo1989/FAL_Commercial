@@ -7,6 +7,7 @@
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr class="bg-light">
+                        <th>Shipment Date</th>
                         <th>Invoice No.</th>
                         <th>Export Bill No.</th>
                         <th>Amount (USD)</th>
@@ -19,6 +20,13 @@
                 <tbody>
                     @forelse($exports as $export)
                     <tr>
+                        <td>
+                            @if ($export->shipment_date)
+                            {{ \Carbon\Carbon::parse($export->shipment_date)->format('d-M-Y') }}
+                        @else
+                            N/A
+                        @endif
+                    </td>
                         <td>{{ $export->invoice_no }}</td>
                         <td>{{ $export->export_bill_no }}</td>
                         <td class="text-right">${{ number_format($export->amount_usd, 2) }}</td>
@@ -49,7 +57,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center">No export records found</td>
+                        <td colspan="8" class="text-center">No export records found</td>
                     </tr>
                     @endforelse
                 </tbody>

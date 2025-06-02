@@ -15,6 +15,7 @@ class SalesExport implements ToModel, WithHeadingRow
         $normalized = $this->normalizeKeys($row);
 
         return new SalesExportModel([
+            'shipment_date' => $this->parseDate($normalized['shipment_date'] ?? null),
             'invoice_no'         => $normalized['invoice_no'] ?? null,
             'export_bill_no'     => $normalized['export_bill_no'] ?? null,
             'amount_usd'         => $this->parseDecimal($normalized['amount'] ?? 0),
@@ -63,6 +64,11 @@ class SalesExport implements ToModel, WithHeadingRow
             'invoice' => 'invoice_no',
             'export_bill_no' => 'export_bill_no',
             'bill_no' => 'export_bill_no',
+
+            // shipment_date
+            'shipment_date' => 'shipment_date',
+            'shipment' => 'shipment_date',
+            
         ];
 
         $normalized = [];

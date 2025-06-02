@@ -16,6 +16,7 @@ class CreateSalesExportsTable extends Migration
         Schema::create('sales_exports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contract_id')->constrained('sales_contracts');
+            $table->date('shipment_date')->nullable();
             $table->string('invoice_no')->nullable();
             $table->string('export_bill_no')->nullable();
             $table->decimal('amount_usd', 15, 2)->default(0);

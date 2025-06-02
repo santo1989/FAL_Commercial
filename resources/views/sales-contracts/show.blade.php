@@ -1,5 +1,29 @@
 <x-backend.layouts.master>
+    @php
+    // Calculate updated contract value and quantity
+    $baseValue = $contract->sales_contract_value;
+    $revisedValue = $contract->Revised_value ?? 0;
+    $totalContractValue = $baseValue + $revisedValue;
 
+    $baseQty = $contract->quantity_pcs;
+    $revisedQty = $contract->Revised_qty_pcs ?? 0;
+    $totalQty = $baseQty + $revisedQty;
+
+    // Calculate FOB
+    $fob = ($totalQty > 0) ? $totalContractValue / $totalQty : 0;
+
+    // Calculate export summaries
+    $exportPcs = DB::table('sales_exports')
+        ->where('contract_id', $contract->id)
+        ->sum('g_qty_pcs') ?? 0;
+    
+    $exportValue = DB::table('sales_exports')
+        ->where('contract_id', $contract->id)
+        ->sum('amount_usd') ?? 0;
+
+    $shortExcessValue = $totalContractValue - $exportValue;
+    $shortExcessPcs = $totalQty - $exportPcs;
+@endphp
     <x-slot name="pageTitle">
         Sales Contracts Details
     </x-slot>
@@ -49,8 +73,9 @@
                                     <th>Contract No.</th>
                                     <td>{{ $contract->sales_contract_no }}</td>
                                 </tr>
-                                <th>Sales Contract Value</th>
-                                <td>${{ number_format($contract->sales_contract_value, 2) }}</td>
+                                <tr>
+                                    <th>Sales Contract Value</th>
+                                    <td>${{ number_format($totalContractValue, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="2">
@@ -68,33 +93,35 @@
                                 </tr>
                                 <tr>
                                     <th>Quantity (Pcs)</th>
-                                    <td>{{ number_format($contract->quantity_pcs) }} PCS</td>
+                                    <td>{{ number_format($totalQty) }} PCS</td>
                                 </tr>
                                 <tr>
                                     <th>FOB</th>
-                                    <td>
-                                        @if ($contract->quantity_pcs > 0)
-                                            ${{ number_format($contract->sales_contract_value / $contract->quantity_pcs, 4) }}
-                                        @else
-                                            $0.0000
-                                        @endif
-                                    </td>
+                                    <td>${{ number_format($fob, 4) }}</td>
                                 </tr>
                                 <tr>
                                     <th>Export (Pcs)</th>
-                                    <td>{{ number_format($contract->export_pcs) }} PCS</td>
+                                    <td>
+                                        @php
+                                            $exportPcs = DB::table('sales_exports')
+                                                ->where('contract_id', $contract->id)
+                                                ->sum('g_qty_pcs');
+                                        @endphp
+                                        {{ number_format($exportPcs) }} PCS
+
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>Export Value</th>
-                                    <td>${{ number_format($contract->export_value, 2) }}</td>
+                                    <td>${{ number_format($exportValue, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <th>Short/Excess Value</th>
-                                    <td>${{ number_format($contract->short_excess_value, 2) }}</td>
+                                    <td>${{ number_format($shortExcessValue, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <th>Short/Excess (Pcs)</th>
-                                    <td>{{ number_format($contract->short_excess_pcs) }} PCS</td>
+                                    <td>{{ number_format($shortExcessPcs) }} PCS</td>
                                 </tr>
                                 <tr>
                                     <th>P. Realized Value</th>
@@ -108,19 +135,24 @@
                                     <th>First Shipment Date</th>
                                     <td>
                                         @php
-                                            $firstShipmentDate = $contract->first_shipment_date
-                                                ? $contract->first_shipment_date->format('d-M-Y')
-                                                : 'N/A';
+                                             
+                                            $firstShipmentDate = DB::table('sales_exports')
+                                                ->where('contract_id', $contract->id)
+                                                ->min('shipment_date') ?? 'N/A';
+                                            
                                         @endphp
+                                        {{ $firstShipmentDate }}
                                     </td>
                                 </tr>
                                 <tr>
                                     <th>Last Shipment Date</th>
                                     <td>
                                         @php
-                                            $lastShipmentDate = $contract->last_shipment_date
-                                                ? $contract->last_shipment_date->format('d-M-Y')
-                                                : 'N/A';
+                                            
+                                            $lastShipmentDate = DB::table('sales_exports')
+                                                ->where('contract_id', $contract->id)
+                                                ->max('shipment_date') ?? 'N/A';
+                                            
                                         @endphp
                                         {{ $lastShipmentDate }}
                                     </td>
@@ -601,8 +633,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Get base values from PHP
-            const salesContractValue = {{ $contract->sales_contract_value }};
-            const exportValue = {{ $contract->export_value }};
+            const salesContractValue = {{ $totalContractValue }};
+            const exportValue = {{ $exportValue }};
             let totalBtbValue = 0;
 
             // Calculate percentages for each row

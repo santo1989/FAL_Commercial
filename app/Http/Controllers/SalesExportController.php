@@ -237,6 +237,7 @@ class SalesExportController extends Controller
     private function isExportDuplicate($row, $contractId)
     {
         return SalesExport::where([
+            'shipment_date' => $this->parseExportDate($row['shipment_date'] ?? $row['shipment_date'] ?? null),
             'contract_id' => $contractId,
             'invoice_no' => $row['invoice_no'] ?? null,
             'export_bill_no' => $row['export_bill_no'] ?? null,
@@ -248,6 +249,7 @@ class SalesExportController extends Controller
     {
         return collect($data)->map(function ($row) use ($contractId) {
             return [
+                'shipment_date' => $this->parseExportDate($row['shipment_date'] ?? $row['shipment'] ?? null),
                 'contract_id' => $contractId,
                 'invoice_no' => $row['invoice_no'] ?? null,
                 'export_bill_no' => $row['export_bill_no'] ?? null,
