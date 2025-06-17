@@ -11,9 +11,12 @@
              <a href="{{ route('home') }}" class="btn btn-outline-secondary float-left mr-2">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
+            @can('Sales-CURD')
+            <!-- New Contract button -->
             <a href="{{ route('sales-contracts.create') }}" class="btn btn-outline-primary float-right mr-2">
                 <i class="fas fa-plus"></i> New Contract
             </a>
+            @endcan
         </div>
     </div>
 
@@ -21,8 +24,7 @@
         <!--card heard for searching and filtering-->
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Search and Filter</h5>
-            <form action="{{ route('sales-contracts.index') }}" method="GET" class="form-inline">
-                {{-- <input type="text" name="buyer_name" class="form-control mr-2" placeholder="Buyer Name" value="{{ request('buyer_name') }}"> --}}
+            <form action="{{ route('sales-contracts.index') }}" method="GET" class="form-inline"> 
                 <select name="buyer_id" class="form-control mr-2">
                     @php
                         $buyers = \App\Models\SalesContract::select('buyer_id')->distinct()->get(); // Fetch all distinct buyer IDs from the contracts
@@ -37,7 +39,7 @@
                         </option>
                     @endforeach
                 </select>
-                {{-- <input type="text" name="contract_no" class="form-control mr-2" placeholder="Contract No." value="{{ request('contract_no') }}"> --}}
+                
                 @php
                     $Sales_contracts = \App\Models\SalesContract::select('sales_contract_no')->distinct()->get(); // Fetch all distinct contract numbers from the contracts
                     $Sales_contracts = \App\Models\SalesContract::whereIn('sales_contract_no', $Sales_contracts)->get(); // Fetch all contracts based on the distinct numbers
@@ -50,7 +52,7 @@
                         </option>
                     @endforeach
                 </select>
-                {{-- <input type="date" name="contract_date" class="form-control mr-2" placeholder="Contract Date" value="{{ request('contract_date') }}"> --}}
+                
                 <!--date range filter-->
                 <label for="contract_date_to" class="mr-2">Start Date:</label>
                 <input type="date" name="contract_date_to" class="form-control mr-2" placeholder="Start Date" value="{{ request('contract_date_to') }}">
@@ -108,13 +110,14 @@
                                    class="btn btn-sm btn-info" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                {{-- @can('edit-contract') --}}
+                                @can('Sales-CURD')
+                                    
+                                
                                 <a href="{{ route('sales-contracts.edit', $contract->id) }}" 
                                    class="btn btn-sm btn-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                {{-- @endcan
-                                @can('delete-contract') --}}
+                               
                                 <form action="{{ route('sales-contracts.destroy', $contract->id) }}" 
                                       method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
                                     @csrf
@@ -123,7 +126,7 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
-                                {{-- @endcan --}}
+                                @endcan
                             </td>
                         </tr>
                         @endforeach

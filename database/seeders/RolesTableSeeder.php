@@ -25,6 +25,23 @@ class RolesTableSeeder extends Seeder
         Role::create([
             'name' => 'General'
         ]);
+        
+        //3
+        Role::create([
+            'name' => 'SuperVisor'
+        ]);
+
+        //4
+        Role::create([
+            'name' => 'Import'
+        ]);
+
+        //5
+        Role::create([
+            'name' => 'Export'
+        ]);
+
+        
  
 
         

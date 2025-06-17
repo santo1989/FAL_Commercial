@@ -1,29 +1,25 @@
 <x-backend.layouts.master>
     @php
-    // Calculate updated contract value and quantity
-    $baseValue = $contract->sales_contract_value;
-    $revisedValue = $contract->Revised_value ?? 0;
-    $totalContractValue = $baseValue + $revisedValue;
+        // Calculate updated contract value and quantity
+        $baseValue = $contract->sales_contract_value;
+        $revisedValue = $contract->Revised_value ?? 0;
+        $totalContractValue = $baseValue + $revisedValue;
 
-    $baseQty = $contract->quantity_pcs;
-    $revisedQty = $contract->Revised_qty_pcs ?? 0;
-    $totalQty = $baseQty + $revisedQty;
+        $baseQty = $contract->quantity_pcs;
+        $revisedQty = $contract->Revised_qty_pcs ?? 0;
+        $totalQty = $baseQty + $revisedQty;
 
-    // Calculate FOB
-    $fob = ($totalQty > 0) ? $totalContractValue / $totalQty : 0;
+        // Calculate FOB
+        $fob = $totalQty > 0 ? $totalContractValue / $totalQty : 0;
 
-    // Calculate export summaries
-    $exportPcs = DB::table('sales_exports')
-        ->where('contract_id', $contract->id)
-        ->sum('g_qty_pcs') ?? 0;
-    
-    $exportValue = DB::table('sales_exports')
-        ->where('contract_id', $contract->id)
-        ->sum('amount_usd') ?? 0;
+        // Calculate export summaries
+        $exportPcs = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('g_qty_pcs') ?? 0;
 
-    $shortExcessValue = $totalContractValue - $exportValue;
-    $shortExcessPcs = $totalQty - $exportPcs;
-@endphp
+        $exportValue = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('amount_usd') ?? 0;
+
+        $shortExcessValue = $totalContractValue - $exportValue;
+        $shortExcessPcs = $totalQty - $exportPcs;
+    @endphp
     <x-slot name="pageTitle">
         Sales Contracts Details
     </x-slot>
@@ -135,11 +131,12 @@
                                     <th>First Shipment Date</th>
                                     <td>
                                         @php
-                                             
-                                            $firstShipmentDate = DB::table('sales_exports')
-                                                ->where('contract_id', $contract->id)
-                                                ->min('shipment_date') ?? 'N/A';
-                                            
+
+                                            $firstShipmentDate =
+                                                DB::table('sales_exports')
+                                                    ->where('contract_id', $contract->id)
+                                                    ->min('shipment_date') ?? 'N/A';
+
                                         @endphp
                                         {{ $firstShipmentDate }}
                                     </td>
@@ -148,11 +145,12 @@
                                     <th>Last Shipment Date</th>
                                     <td>
                                         @php
-                                            
-                                            $lastShipmentDate = DB::table('sales_exports')
-                                                ->where('contract_id', $contract->id)
-                                                ->max('shipment_date') ?? 'N/A';
-                                            
+
+                                            $lastShipmentDate =
+                                                DB::table('sales_exports')
+                                                    ->where('contract_id', $contract->id)
+                                                    ->max('shipment_date') ?? 'N/A';
+
                                         @endphp
                                         {{ $lastShipmentDate }}
                                     </td>
@@ -287,26 +285,30 @@
                         <!-- Add this to your Blade template -->
                         <div class="file-upload-buttons">
                             <div class="btn-group-horizontal" role="group" aria-label="File Upload Buttons">
-                                <!-- Import tempelete file download -->
-                                <a href="{{ route('excel.import-template') }}"
-                                    class="btn btn-primary btn-md rounded-pill mb-2">
-                                    <i class="fas fa-download me-2"></i> Download Import Template </a>
+                                @can('Import-CURD')
+                                    <!-- Import tempelete file download -->
+                                    <a href="{{ route('excel.import-template') }}"
+                                        class="btn btn-primary btn-md rounded-pill mb-2">
+                                        <i class="fas fa-download me-2"></i> Download Import Template </a>
 
-                                <!-- Import Upload -->
-                                <button type="button" class="btn btn-success btn-md rounded-pill mb-2"
-                                    data-bs-toggle="modal" data-bs-target="#importModal">
-                                    <i class="fas fa-file-import me-2"></i> Import File upload
-                                </button>
-                                <!-- Export template file download -->
-                                <a href="{{ route('excel.export-template') }}"
-                                    class="btn btn-primary btn-md rounded-pill mb-2">
-                                    <i class="fas fa-download me-2"></i> Download Export Template </a>
+                                    <!-- Import Upload -->
+                                    <button type="button" class="btn btn-success btn-md rounded-pill mb-2"
+                                        data-bs-toggle="modal" data-bs-target="#importModal">
+                                        <i class="fas fa-file-import me-2"></i> Import File upload
+                                    </button>
+                                @endcan
+                                @can('Export-CURD')
+                                    <!-- Export template file download -->
+                                    <a href="{{ route('excel.export-template') }}"
+                                        class="btn btn-primary btn-md rounded-pill mb-2">
+                                        <i class="fas fa-download me-2"></i> Download Export Template </a>
 
-                                <!-- Export Upload -->
-                                <button type="button" class="btn btn-info btn-md rounded-pill" data-bs-toggle="modal"
-                                    data-bs-target="#exportModal">
-                                    <i class="fas fa-file-export me-2"></i> Export File Upload
-                                </button>
+                                    <!-- Export Upload -->
+                                    <button type="button" class="btn btn-info btn-md rounded-pill" data-bs-toggle="modal"
+                                        data-bs-target="#exportModal">
+                                        <i class="fas fa-file-export me-2"></i> Export File Upload
+                                    </button>
+                                @endcan
                             </div>
                         </div>
 
@@ -431,12 +433,13 @@
                                 </tr>
                                 <tr>
                                     <th>Revised Value</th>
-                                    <td><input type="number" name="Revised_value" class="form-control" step="0.01"
-                                            required></td>
+                                    <td><input type="number" name="Revised_value" class="form-control"
+                                            step="0.01" required></td>
                                 </tr>
                                 <tr>
                                     <th>Revised Qty (Pcs)</th>
-                                    <td><input type="number" name="Revised_qty_pcs" class="form-control" required></td>
+                                    <td><input type="number" name="Revised_qty_pcs" class="form-control" required>
+                                    </td>
                                 </tr>
                             </thead>
                         </table>
@@ -470,7 +473,7 @@
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        
+
                                         <th>Revised Number</th>
                                         <th>Value</th>
                                         <th>Qty (PCS)</th>
@@ -479,11 +482,11 @@
                                 <tbody>
                                     @foreach (array_reverse($contract->revised_history) as $history)
                                         <tr>
-                                            
+
                                             <td>{{ $history['Revised_no'] }}</td>
                                             <td>{{ number_format($history['Revised_value'], 2) }}</td>
                                             <td>{{ number_format($history['Revised_qty_pcs']) }}</td>
-                                            
+
                                         </tr>
                                     @endforeach
                                 </tbody>

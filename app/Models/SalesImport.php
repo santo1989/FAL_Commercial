@@ -19,4 +19,6 @@ class SalesImport extends Model
     {
         return $this->hasMany(SalesExport::class, 'contract_id', 'contract_id');
     }
+
+    
 }

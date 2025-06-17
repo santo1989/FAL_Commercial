@@ -119,21 +119,24 @@
 
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
-                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href="{{ url('/sales-contracts') }} ">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-contracts') }} ">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Sales Contract
                                     </a>
 
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
-                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href="{{ url('/sales-imports') }} ">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-imports') }} ">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         import
                                     </a>
 
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
-                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href="{{ url('/sales-exports') }} ">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-exports') }} ">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Export
                                     </a>
@@ -145,24 +148,100 @@
 
                         @can('General')
                             <div class="row justify-content-center">
-                                {{-- <div class="col-3 pt-1 pb-1">
+                                <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ route('home') }}">
-                                        <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div>
-                                        Home
+                                        href="{{ url('/sales-contracts') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Sales Contract
                                     </a>
+
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ route('users.show', ['user' => auth()->user()->id]) }}">
-                                        <div class="sb-nav-link-icon"><i class="far fa-address-card"></i></div>
-                                        Profile
-                                    </a>
-                                </div> --}}
-                                <div class="col-3 pt-1 pb-1">
-                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;" href=" ">
+                                        href="{{ url('/sales-imports') }} ">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
-                                        Name
+                                        import
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-exports') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Export
+                                    </a>
+
+                                </div>
+
+                            </div>
+                        @endcan
+
+                        @can('SuperVisor')
+                            <div class="row justify-content-center">
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-contracts') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Sales Contract
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-imports') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        import
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-exports') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Export
+                                    </a>
+
+                                </div>
+
+                            </div>
+                        @endcan
+
+                        @can('Import')
+                            <div class="row justify-content-center">
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-contracts') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Sales Contract
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-imports') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        import
+                                    </a>
+
+                                </div>
+                            </div>
+                        @endcan
+                        @can('Export')
+                            <div class="row justify-content-center">
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-contracts') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Sales Contract
+                                    </a>
+
+                                </div>
+
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/sales-exports') }} ">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        Export
                                     </a>
 
                                 </div>

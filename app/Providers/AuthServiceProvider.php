@@ -84,11 +84,15 @@ class AuthServiceProvider extends ServiceProvider
             });
         });
 
-        Gate::define('TNA-CURD', function ($user) {
-            return in_array($user->role->name, ['SuperVisor', 'Admin', 'Marchendiser']);
+        Gate::define('Import-CURD', function ($user) {
+            return in_array($user->role->name, ['SuperVisor', 'Admin', 'Import']);
         });
-        Gate::define('TNA-Factory', function ($user) {
-            return in_array($user->role->name, ['SuperVisor', 'Admin', 'Factory Merchandise']);
+        Gate::define('Export-CURD', function ($user) {
+            return in_array($user->role->name, ['SuperVisor', 'Admin', 'Export']);
+        });
+
+        Gate::define('Sales-CURD', function ($user) {
+            return in_array($user->role->name, ['SuperVisor', 'Admin', 'Export', 'Import']);
         });
     }
 }

@@ -18,14 +18,15 @@ class SalesExportController extends Controller
     
     public function index()
     {
-        $salesExports = SalesExport::with('contract')->paginate(10);
-        return view('sales-exports.index', compact('salesExports'));
+        $exports = SalesExport::with('Salescontract')->paginate(10);
+        return view('sales-exports.index', compact('exports'));
     }
 
     
     public function create()
     {
-        return view('sales-exports.create');
+        $contracts = \App\Models\SalesContract::all();
+        return view('sales-exports.create', compact('contracts'));
     }
 
    
@@ -44,24 +45,31 @@ class SalesExportController extends Controller
 
         SalesExport::create($validatedData);
 
-        return redirect()->route('sales-exports.index')->with('success', 'Sales Export created successfully.');
+        return redirect()->route('sales-exports.index')->withMessage( 'Sales Export created successfully.');
     }
 
    
     public function show(SalesExport $salesExport)
     {
-        return view('sales-exports.show', compact('salesExport'));
+        // Ensure the export exists
+        $export = SalesExport::findOrFail($salesExport->id);
+        $contracts = \App\Models\SalesContract::all();
+        return view('sales-exports.show', compact('export', 'contracts'));
     }
 
    
     public function edit(SalesExport $salesExport)
     {
-        return view('sales-exports.edit', compact('salesExport'));
+        // Ensure the export exists
+        $export = SalesExport::findOrFail($salesExport->id);
+        $contracts = \App\Models\SalesContract::all();
+        return view('sales-exports.edit', compact('export', 'contracts'));
     }
 
   
     public function update(Request $request, SalesExport $salesExport)
     {
+        // 
         $validatedData = $request->validate([
             'contract_id' => 'required|exists:sales_contracts,id',
             'invoice_no' => 'nullable|string|max:255',
@@ -70,18 +78,28 @@ class SalesExportController extends Controller
             'realized_value' => 'required|numeric',
             'g_qty_pcs' => 'required|integer',
             'date_of_realized' => 'nullable|date',
-            'due_amount_usd' => 'required|numeric',
+            'due_amount_usd' => 'nullable|numeric',
+            'shipment_date' => 'nullable|date'
+            
         ]);
+        // Ensure the export exists
+        $salesExport = SalesExport::findOrFail($salesExport->id);
+        // Update the export with validated data
+        $validatedData['shipment_date'] = $validatedData['shipment_date'] ?? null;
+        $validatedData['due_amount_usd'] = $validatedData['due_amount_usd'] ?? 0;
+      
 
         $salesExport->update($validatedData);
 
-        return redirect()->route('sales-exports.index')->with('success', 'Sales Export updated successfully.');
+        return redirect()->route('sales-exports.index')->withMessage( 'Sales Export updated successfully.');
     }
 
     
     public function destroy(SalesExport $salesExport)
     {
-       
+    //    dd($salesExport);
+        // Ensure the export exists
+        $salesExport = SalesExport::findOrFail($salesExport->id);
         $salesExport->delete();
         return redirect()->back()->withMessage('Sales Export deleted successfully.');
     }
@@ -226,7 +244,7 @@ class SalesExportController extends Controller
             DB::commit();
 
             return redirect()->route('sales-contracts.show', $contractId)
-                ->with('success', 'Export data imported successfully.');
+                ->withMessage( 'Export data imported successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()

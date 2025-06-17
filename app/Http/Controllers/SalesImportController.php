@@ -18,13 +18,14 @@ class SalesImportController extends Controller
     
     public function index()
     {
-        $salesImports = SalesImport::with('contract')->paginate(10);
-        return view('sales-imports.index', compact('salesImports'));
+        $imports = SalesImport::with('salesContract')->paginate(10);
+        return view('sales-imports.index', compact('imports'));
     }
 
     public function create()
     {
-        return view('sales-imports.create');
+        $contracts = \App\Models\SalesContract::all();
+        return view('sales-imports.create', compact('contracts'));
         
     }
 
@@ -45,7 +46,7 @@ class SalesImportController extends Controller
 
         SalesImport::create($validatedData);
 
-        return redirect()->route('sales-imports.index')->with('success', 'Sales Import created successfully.');
+        return redirect()->route('sales-imports.index')->withMessage( 'Sales Import created successfully.');
     }
 
    
@@ -57,12 +58,16 @@ class SalesImportController extends Controller
  
     public function edit(SalesImport $salesImport)
     {
-        return view('sales-imports.edit', compact('salesImport'));
+        // Check if the sales import exists
+        $import = SalesImport::find($salesImport->id);
+        $contracts = \App\Models\SalesContract::all();
+        return view('sales-imports.edit', compact('import', 'contracts'));
     }
 
   
     public function update(Request $request, SalesImport $salesImport)
     {
+        // dd($salesImport);
         $validatedData = $request->validate([
             'contract_id' => 'required|exists:sales_contracts,id',
             'btb_lc_no' => 'nullable|string|max:255',
@@ -78,12 +83,17 @@ class SalesImportController extends Controller
 
         $salesImport->update($validatedData);
 
-        return redirect()->route('sales-imports.index')->with('success', 'Sales Import updated successfully.');
+        return redirect()->route('sales-imports.index')->withMessage( 'Sales Import updated successfully.');
     }
 
 
     public function destroy(SalesImport $salesImport)
     {
+        // Check if the sales import exists
+        $salesImport = SalesImport::find($salesImport->id);
+        if (!$salesImport) {
+            return redirect()->back()->withErrors('Sales Import not found.');
+        }
 
         $salesImport->delete();
         //return back with success message from where it came from
@@ -174,7 +184,7 @@ class SalesImportController extends Controller
             DB::commit();
 
             return redirect()->route('sales-contracts.show', $contractId)
-                ->with('success', 'Import data processed successfully.');
+                ->withMessage( 'Import data processed successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()

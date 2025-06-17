@@ -194,7 +194,7 @@ class SalesContractController extends Controller
             'quantity_pcs' => $validatedData['quantity_pcs'],
         ]);
 
-        return redirect()->route('sales-contracts.index')->with('success', 'Contract updated successfully.');
+        return redirect()->route('sales-contracts.index')->withMessage( 'Contract updated successfully.');
     }
 
   
@@ -205,7 +205,7 @@ class SalesContractController extends Controller
             return redirect()->back()->withErrors('Cannot delete contract with related imports or exports.');
         }
         $SalesContract->delete();
-        return redirect()->route('sales-contracts.index')->with('success', 'Contract deleted successfully.');
+        return redirect()->route('sales-contracts.index')->withMessage( 'Contract deleted successfully.');
     }
 
     public function storeUD(Request $request, SalesContract $contract)
@@ -248,7 +248,7 @@ class SalesContractController extends Controller
         // 3) Save everything in one go
         $contract->save();
 
-        return back()->with('success', 'UD details updated!');
+        return back()->withMessage( 'UD details updated!');
     }
 
 
@@ -282,6 +282,6 @@ class SalesContractController extends Controller
 
         $contract->save();
 
-        return redirect()->back()->with('success', 'Revised details updated!');
+        return redirect()->back()->withMessage( 'Revised details updated!');
     }
 }
