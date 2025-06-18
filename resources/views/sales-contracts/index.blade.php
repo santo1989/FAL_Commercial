@@ -84,24 +84,71 @@
                     </thead>
                     <tbody>
                         @foreach($contracts as $contract)
+                        
+                        @php
+                        // Base contract values
+                        $baseValue = $contract->sales_contract_value;
+                        $baseQty = $contract->quantity_pcs;
+                
+                        // Initialize revised totals
+                        $totalRevisedValue = $contract->Revised_value ?? 0;
+                        $totalRevisedQty = $contract->Revised_qty_pcs ?? 0;
+                
+                        // Add all historical revisions
+                        if ($contract->revised_history) {
+                            foreach ($contract->revised_history as $history) {
+                                $totalRevisedValue += $history['Revised_value'] ?? 0;
+                                $totalRevisedQty += $history['Revised_qty_pcs'] ?? 0;
+                            }
+                        }
+                
+                        // Calculate final totals
+                        $sales_contract_value  = $baseValue + $totalRevisedValue;
+                        $quantity_pcs  = $baseQty + $totalRevisedQty;
+                
+                        // Calculate FOB
+                        $fob = $quantity_pcs  > 0 ? $sales_contract_value  / $quantity_pcs  : 0;
+                
+                        // find the first and last shipment dates
+                        $first_shipment_date = DB::table('sales_exports')
+                            ->where('contract_id', $contract->id)
+                            ->orderBy('shipment_date', 'asc')
+                            ->value('shipment_date');
+                        //if no shipment date found, set to null
+                        if (!$first_shipment_date) {
+                            $first_shipment_date = null;
+                        } else {
+                            $first_shipment_date = \Carbon\Carbon::parse($first_shipment_date)->format('d-M-Y');
+                        }
+                        $last_shipment_date = DB::table('sales_exports')
+                            ->where('contract_id', $contract->id)
+                            ->orderBy('shipment_date', 'desc')
+                            ->value('shipment_date');
+                        //if no shipment date found, set to null
+                        if (!$last_shipment_date) {
+                            $last_shipment_date = null;
+                        } else {
+                            $last_shipment_date = \Carbon\Carbon::parse($last_shipment_date)->format('d-M-Y');
+                        }
+
+                    @endphp
+
                         <tr>
                             <td>{{ $contract->sales_contract_no }}</td>
                             <td>{{ $contract->buyer_name }}</td>
-                            <td>${{ number_format($contract->sales_contract_value, 2) }}</td>
-                            <td>{{ number_format($contract->quantity_pcs) }}</td>
-                            @php
-                                $fob =  $contract->sales_contract_value / $contract->quantity_pcs ;
-                            @endphp
+                            <td>${{ number_format($sales_contract_value, 2) }}</td>
+                            <td>{{ number_format($quantity_pcs) }}</td>
+                           
                             <td>${{ number_format($fob, 4) }}</td>
                             <td>
-                                @isset($contract->first_shipment_date) 
-                                {{ $contract->first_shipment_date->format('d-M-y') ?? '' }} to
+                                @isset($first_shipment_date) 
+                                {{ $first_shipment_date ?? '' }} to
                                 @endisset
-                                @isset($contract->last_shipment_date) 
-                                {{ $contract->last_shipment_date->format('d-M-y') ?? '' }}
+                                @isset($last_shipment_date) 
+                                {{ $last_shipment_date ?? '' }}
                                 @endisset<br>
                                 @isset($contract->expiry_date) 
-                                {{ $contract->expiry_date->format('d-M-y') ?? '' }}
+                                {{ $contract->expiry_date ?? '' }}
                                 @endisset<br>
                                  
                             </td>
