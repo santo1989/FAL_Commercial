@@ -1,25 +1,35 @@
 <x-backend.layouts.master>
     @php
-        // Calculate updated contract value and quantity
-        $baseValue = $contract->sales_contract_value;
-        $revisedValue = $contract->Revised_value ?? 0;
-        $totalContractValue = $baseValue + $revisedValue;
+    // Base contract values
+    $baseValue = $contract->sales_contract_value;
+    $baseQty = $contract->quantity_pcs;
+    
+    // Initialize revised totals
+    $totalRevisedValue = $contract->Revised_value ?? 0;
+    $totalRevisedQty = $contract->Revised_qty_pcs ?? 0;
+    
+    // Add all historical revisions
+    if ($contract->revised_history) {
+        foreach ($contract->revised_history as $history) {
+            $totalRevisedValue += $history['Revised_value'] ?? 0;
+            $totalRevisedQty += $history['Revised_qty_pcs'] ?? 0;
+        }
+    }
+    
+    // Calculate final totals
+    $totalContractValue = $baseValue + $totalRevisedValue;
+    $totalQty = $baseQty + $totalRevisedQty;
 
-        $baseQty = $contract->quantity_pcs;
-        $revisedQty = $contract->Revised_qty_pcs ?? 0;
-        $totalQty = $baseQty + $revisedQty;
+    // Calculate FOB
+    $fob = $totalQty > 0 ? $totalContractValue / $totalQty : 0;
 
-        // Calculate FOB
-        $fob = $totalQty > 0 ? $totalContractValue / $totalQty : 0;
+    // Calculate export summaries
+    $exportPcs = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('g_qty_pcs') ?? 0;
+    $exportValue = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('amount_usd') ?? 0;
 
-        // Calculate export summaries
-        $exportPcs = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('g_qty_pcs') ?? 0;
-
-        $exportValue = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('amount_usd') ?? 0;
-
-        $shortExcessValue = $totalContractValue - $exportValue;
-        $shortExcessPcs = $totalQty - $exportPcs;
-    @endphp
+    $shortExcessValue = $totalContractValue - $exportValue;
+    $shortExcessPcs = $totalQty - $exportPcs;
+@endphp
     <x-slot name="pageTitle">
         Sales Contracts Details
     </x-slot>
@@ -126,6 +136,14 @@
                                 <tr>
                                     <th>Replace</th>
                                     <td>{{ $contract->replace ? 'Yes' : 'No' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Revised Value</th>
+                                    <td>${{ number_format($contract->Revised_value, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Revised Qty (Pcs)</th>
+                                    <td>{{ number_format($contract->Revised_qty_pcs) }} PCS</td>
                                 </tr>
                                 <tr>
                                     <th>First Shipment Date</th>
@@ -239,47 +257,36 @@
 
 
                         </div>
-                        @php
-                            // merge history with current
-                            $allUd = collect($contract->ud_history ?? [])
-                                ->map(
-                                    fn($h) => [
-                                        'value' => $h['ud_value'],
-                                        'qty' => $h['ud_qty_pcs'],
-                                        'used' => $h['used_value'] ?? 0,
-                                    ],
-                                )
-                                ->push([
-                                    'value' => $contract->ud_value,
-                                    'qty' => $contract->ud_qty_pcs,
-                                    'used' => $contract->data_1,
-                                ]);
+                       <!-- UD Totals Calculation -->
+@php
+$udHistory = $contract->ud_history ?? []; // Use empty array if null
+$udTotals = [
+    'value' => $contract->ud_value ?? 0,
+    'qty' => $contract->ud_qty_pcs ?? 0,
+    'used' => $contract->used_value ?? 0,
+];
 
-                            $totals = [
-                                'value' => $allUd->sum('value'),
-                                'qty' => $allUd->sum('qty'),
-                                'used' => $allUd->sum('used'),
-                            ];
-                        @endphp
+foreach ($udHistory as $record) {
+    $udTotals['value'] += $record['ud_value'] ?? 0;
+    $udTotals['qty'] += $record['ud_qty_pcs'] ?? 0;
+    $udTotals['used'] += $record['used_value'] ?? 0;
+}
+@endphp
 
-                        <table class="table table-bordered">
-                            <tr>
-                                <th>Total UD Value</th>
-                                <td>${{ number_format($totals['value'], 2) }}</td>
-                            </tr>
-                            <tr>
-                                <th>Total UD Qty (PCS)</th>
-                                <td>{{ number_format($totals['qty']) }} PCS</td>
-                            </tr>
-                            <tr>
-                                <th>Total Used Value (USD)</th>
-                                <td>${{ number_format($totals['used'], 2) }}</td>
-                            </tr>
-                            <tr>
-                                <th>Bank Name (Current)</th>
-                                <td>{{ $contract->bank_name }}</td>
-                            </tr>
-                        </table>
+<table class="table table-bordered">
+    <tr>
+        <th>Total UD Value</th>
+        <td>${{ number_format($udTotals['value'], 2) }}</td>
+    </tr>
+    <tr>
+        <th>Total UD Qty (PCS)</th>
+        <td>{{ number_format($udTotals['qty']) }} PCS</td>
+    </tr>
+    <tr>
+        <th>Total Used Value (USD)</th>
+        <td>${{ number_format($udTotals['used'], 2) }}</td>
+    </tr>
+</table>
 
                         <!-- Add a 2 floating file upload buttons to upload the SalesExport excel file and the SalesImport file and save it to the database and back to this page -->
                         <!-- Add this to your Blade template -->
@@ -467,32 +474,33 @@
                     </button>
                 </div>
                 <div class="modal-body ">
-                    @if ($contract->revised_history)
-                        <div class="mt-4">
-                            <h5>Revised Change History</h5>
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
+                   <!-- Revised History Modal Display -->
+@if ($contract->revised_history)
+<div class="mt-4">
+    <h5>Revised Change History</h5>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Revised No.</th>
+                <th>Value</th>
+                <th>Qty (PCS)</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($contract->revised_history as $history)
+                <tr>
+                    <td>{{ $history['Revised_no'] }}</td>
+                    <td>${{ number_format($history['Revised_value'], 2) }}</td>
+                    <td>{{ number_format($history['Revised_qty_pcs']) }}</td>
+                    <td>{{ $history['Revised_date'] }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
+@endif
 
-                                        <th>Revised Number</th>
-                                        <th>Value</th>
-                                        <th>Qty (PCS)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (array_reverse($contract->revised_history) as $history)
-                                        <tr>
-
-                                            <td>{{ $history['Revised_no'] }}</td>
-                                            <td>{{ number_format($history['Revised_value'], 2) }}</td>
-                                            <td>{{ number_format($history['Revised_qty_pcs']) }}</td>
-
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -573,36 +581,36 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    @if ($contract->ud_history)
-                        <div class="mt-4">
-                            <h5>UD Change History</h5>
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Changed At</th>
-                                        <th>UD No</th>
-                                        <th>Value</th>
-                                        <th>Qty</th>
-                                        <th>Used</th>
-                                        <th>By</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (array_reverse($contract->ud_history ?? []) as $h)
-                                        <tr>
-                                            <td>{{ $h['changed_at'] }}</td>
-                                            <td>{{ $h['ud_no'] }}</td>
-                                            <td>${{ number_format($h['ud_value'], 2) }}</td>
-                                            <td>{{ number_format($h['ud_qty_pcs']) }}</td>
-                                            <td>${{ number_format($h['used_value'] ?? 0, 2) }}</td>
-                                            <td>{{ optional(\App\Models\User::find($h['changed_by']))->name ?? 'System' }}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
+                   <!-- UD History Modal Display -->
+@if ($contract->ud_history)
+<div class="mt-4">
+    <h5>UD History</h5>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>UD No.</th>
+                <th>Value</th>
+                <th>Qty (PCS)</th>
+                <th>Used Value</th>
+                <th>Bank</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($contract->ud_history as $history)
+                <tr>
+                    <td>{{ $history['ud_no'] }}</td>
+                    <td>${{ number_format($history['ud_value'], 2) }}</td>
+                    <td>{{ number_format($history['ud_qty_pcs']) }}</td>
+                    <td>${{ number_format($history['used_value'], 2) }}</td>
+                    <td>{{ $history['bank_name'] }}</td>
+                    <td>{{ $history['ud_date'] }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
+@endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

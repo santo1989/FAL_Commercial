@@ -227,10 +227,10 @@ Route::get('/migrate', function () {
     echo "migration create<br>";
 });
 
-Route::get('/migrate-fresh', function () {
-    $fresh = Artisan::call('migrate:fresh --seed');
-    echo "migrate:fresh --seed create<br>";
-});
+// Route::get('/migrate-fresh', function () {
+//     $fresh = Artisan::call('migrate:fresh --seed');
+//     echo "migrate:fresh --seed create<br>";
+// });
 
 Route::get('/optimize', function () {
     $optimize = Artisan::call('optimize:clear');
