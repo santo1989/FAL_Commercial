@@ -1,35 +1,37 @@
 <x-backend.layouts.master>
     @php
-    // Base contract values
-    $baseValue = $contract->sales_contract_value;
-    $baseQty = $contract->quantity_pcs;
-    
-    // Initialize revised totals
-    $totalRevisedValue = $contract->Revised_value ?? 0;
-    $totalRevisedQty = $contract->Revised_qty_pcs ?? 0;
-    
-    // Add all historical revisions
-    if ($contract->revised_history) {
-        foreach ($contract->revised_history as $history) {
-            $totalRevisedValue += $history['Revised_value'] ?? 0;
-            $totalRevisedQty += $history['Revised_qty_pcs'] ?? 0;
+        // Base contract values
+        $baseValue = $contract->sales_contract_value;
+        $baseQty = $contract->quantity_pcs;
+
+        // Initialize revised totals
+        $totalRevisedValue = $contract->Revised_value ?? 0;
+        $totalRevisedQty = $contract->Revised_qty_pcs ?? 0;
+
+        // Add all historical revisions
+        if ($contract->revised_history) {
+            foreach ($contract->revised_history as $history) {
+                $totalRevisedValue += $history['Revised_value'] ?? 0;
+                $totalRevisedQty += $history['Revised_qty_pcs'] ?? 0;
+            }
         }
-    }
-    
-    // Calculate final totals
-    $totalContractValue = $baseValue + $totalRevisedValue;
-    $totalQty = $baseQty + $totalRevisedQty;
 
-    // Calculate FOB
-    $fob = $totalQty > 0 ? $totalContractValue / $totalQty : 0;
+        // Calculate final totals
+        $totalContractValue = $baseValue + $totalRevisedValue;
+        $totalQty = $baseQty + $totalRevisedQty;
 
-    // Calculate export summaries
-    $exportPcs = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('g_qty_pcs') ?? 0;
-    $exportValue = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('amount_usd') ?? 0;
+        // Calculate FOB
+        $fob = $totalQty > 0 ? $totalContractValue / $totalQty : 0;
 
-    $shortExcessValue = $totalContractValue - $exportValue;
-    $shortExcessPcs = $totalQty - $exportPcs;
-@endphp
+        // Calculate export summaries
+        $exportPcs = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('g_qty_pcs') ?? 0;
+        $exportValue = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('amount_usd') ?? 0;
+
+        $p_realized_value = DB::table('sales_exports')->where('contract_id', $contract->id)->sum('realized_value') ?? 0;
+
+        $shortExcessValue = $totalContractValue - $exportValue;
+        $shortExcessPcs = $totalQty - $exportPcs;
+    @endphp
     <x-slot name="pageTitle">
         Sales Contracts Details
     </x-slot>
@@ -131,19 +133,11 @@
                                 </tr>
                                 <tr>
                                     <th>P. Realized Value</th>
-                                    <td>${{ number_format($contract->p_realized_value, 2) }}</td>
+                                    <td>${{ number_format($p_realized_value, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <th>Replace</th>
                                     <td>{{ $contract->replace ? 'Yes' : 'No' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Revised Value</th>
-                                    <td>${{ number_format($contract->Revised_value, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Revised Qty (Pcs)</th>
-                                    <td>{{ number_format($contract->Revised_qty_pcs) }} PCS</td>
                                 </tr>
                                 <tr>
                                     <th>First Shipment Date</th>
@@ -190,59 +184,59 @@
 
                     </div>
                     <div class="col-md-6">
-                        <div class="text-center bg-light">
-                            <h4>BTB Details</h4>
+                       <!-- BTB Details Section -->
+<div class="text-center bg-light">
+    <h4>BTB Details</h4>
+</div>
+<table class="table table-bordered" id="btbTable">
+    <thead class="bg-light">
+        <tr>
+            <th></th>
+            <th>Amount (USD)</th>
+            <th>% As per Contract</th>
+            <th>% As per Export</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Fabrics Row -->
+        <tr class="btb-row" data-category="fabrics">
+            <th>Fabrics</th>
+            <td data-value="{{ $contract->fabrics_value }}">
+                ${{ number_format($contract->fabrics_value, 2) }}
+            </td>
+            <td class="contract-percent"></td>
+            <td class="export-percent"></td>
+        </tr>
 
-                        </div>
-                        <table class="table table-bordered" id="btbTable">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th></th>
-                                    <th>Amount (USD)</th>
-                                    <th>% As per Contract</th>
-                                    <th>% As per Export</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Fabrics Row -->
-                                <tr class="btb-row" data-category="fabrics">
-                                    <th>Fabrics</th>
-                                    <td data-value="{{ $contract->fabrics_value }}">
-                                        ${{ number_format($contract->fabrics_value, 2) }}
-                                    </td>
-                                    <td class="contract-percent"></td>
-                                    <td class="export-percent"></td>
-                                </tr>
+        <!-- Accessories Row -->
+        <tr class="btb-row" data-category="accessories">
+            <th>Accessories</th>
+            <td data-value="{{ $contract->accessories_value }}">
+                ${{ number_format($contract->accessories_value, 2) }}
+            </td>
+            <td class="contract-percent"></td>
+            <td class="export-percent"></td>
+        </tr>
 
-                                <!-- Accessories Row -->
-                                <tr class="btb-row" data-category="accessories">
-                                    <th>Accessories</th>
-                                    <td data-value="{{ $contract->accessories_value }}">
-                                        ${{ number_format($contract->accessories_value, 2) }}
-                                    </td>
-                                    <td class="contract-percent"></td>
-                                    <td class="export-percent"></td>
-                                </tr>
+        <!-- Print/Emb Row -->
+        <tr class="btb-row" data-category="print_emb">
+            <th>Print/Emb.</th>
+            <td data-value="{{ $contract->print_emb_value }}">
+                ${{ number_format($contract->print_emb_value, 2) }}
+            </td>
+            <td class="contract-percent"></td>
+            <td class="export-percent"></td>
+        </tr>
 
-                                <!-- Print/Emb Row -->
-                                <tr class="btb-row" data-category="print_emb">
-                                    <th>Print/Emb.</th>
-                                    <td data-value="{{ $contract->print_emb_value }}">
-                                        ${{ number_format($contract->print_emb_value, 2) }}
-                                    </td>
-                                    <td class="contract-percent"></td>
-                                    <td class="export-percent"></td>
-                                </tr>
-
-                                <!-- Total BTB Row -->
-                                <tr class="total-row">
-                                    <th>Total BTB</th>
-                                    <td id="totalBtbAmount"></td>
-                                    <td id="totalContractPercent"></td>
-                                    <td id="totalExportPercent"></td>
-                                </tr>
-                            </tbody>
-                        </table>
+        <!-- Total BTB Row -->
+        <tr class="total-row">
+            <th>Total BTB</th>
+            <td id="totalBtbAmount"></td>
+            <td id="totalContractPercent"></td>
+            <td id="totalExportPercent"></td>
+        </tr>
+    </tbody>
+</table>
 
                         <div class="text-center bg-light p-4 p-2 mb-4">
                             <h4>UD Details</h4> <!--add a modal to add new UD details and save it to the database-->
@@ -257,36 +251,36 @@
 
 
                         </div>
-                       <!-- UD Totals Calculation -->
-@php
-$udHistory = $contract->ud_history ?? []; // Use empty array if null
-$udTotals = [
-    'value' => $contract->ud_value ?? 0,
-    'qty' => $contract->ud_qty_pcs ?? 0,
-    'used' => $contract->used_value ?? 0,
-];
+                        <!-- UD Totals Calculation -->
+                        @php
+                            $udHistory = $contract->ud_history ?? []; // Use empty array if null
+                            $udTotals = [
+                                'value' => $contract->ud_value ?? 0,
+                                'qty' => $contract->ud_qty_pcs ?? 0,
+                                'used' => $contract->used_value ?? 0,
+                            ];
 
-foreach ($udHistory as $record) {
-    $udTotals['value'] += $record['ud_value'] ?? 0;
-    $udTotals['qty'] += $record['ud_qty_pcs'] ?? 0;
-    $udTotals['used'] += $record['used_value'] ?? 0;
-}
-@endphp
+                            foreach ($udHistory as $record) {
+                                $udTotals['value'] += $record['ud_value'] ?? 0;
+                                $udTotals['qty'] += $record['ud_qty_pcs'] ?? 0;
+                                $udTotals['used'] += $record['used_value'] ?? 0;
+                            }
+                        @endphp
 
-<table class="table table-bordered">
-    <tr>
-        <th>Total UD Value</th>
-        <td>${{ number_format($udTotals['value'], 2) }}</td>
-    </tr>
-    <tr>
-        <th>Total UD Qty (PCS)</th>
-        <td>{{ number_format($udTotals['qty']) }} PCS</td>
-    </tr>
-    <tr>
-        <th>Total Used Value (USD)</th>
-        <td>${{ number_format($udTotals['used'], 2) }}</td>
-    </tr>
-</table>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Total UD Value</th>
+                                <td>${{ number_format($udTotals['value'], 2) }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total UD Qty (PCS)</th>
+                                <td>{{ number_format($udTotals['qty']) }} PCS</td>
+                            </tr>
+                            <tr>
+                                <th>Total Used Value (USD)</th>
+                                <td>${{ number_format($udTotals['used'], 2) }}</td>
+                            </tr>
+                        </table>
 
                         <!-- Add a 2 floating file upload buttons to upload the SalesExport excel file and the SalesImport file and save it to the database and back to this page -->
                         <!-- Add this to your Blade template -->
@@ -474,32 +468,39 @@ foreach ($udHistory as $record) {
                     </button>
                 </div>
                 <div class="modal-body ">
-                   <!-- Revised History Modal Display -->
-@if ($contract->revised_history)
-<div class="mt-4">
-    <h5>Revised Change History</h5>
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Revised No.</th>
-                <th>Value</th>
-                <th>Qty (PCS)</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($contract->revised_history as $history)
-                <tr>
-                    <td>{{ $history['Revised_no'] }}</td>
-                    <td>${{ number_format($history['Revised_value'], 2) }}</td>
-                    <td>{{ number_format($history['Revised_qty_pcs']) }}</td>
-                    <td>{{ $history['Revised_date'] }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
-@endif
+                    <!-- Revised History Modal Display -->
+                    @if ($contract->revised_history)
+                        <div class="mt-4">
+                            <h5>Revised Change History</h5>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Revised No.</th>
+                                        <th>Value</th>
+                                        <th>Qty (PCS)</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    
+                                    @foreach ($contract->revised_history as $history)
+                                        <tr>
+                                            <td>{{ $history['Revised_no'] }}</td>
+                                            <td>${{ number_format($history['Revised_value'], 2) }}</td>
+                                            <td>{{ number_format($history['Revised_qty_pcs']) }}</td>
+                                            <td>{{ $history['Revised_date'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                    <tr>
+                                        <td>{{ $contract['Revised_no'] }}</td>
+                                        <td>${{ number_format($contract['Revised_value'], 2) }}</td>
+                                        <td>{{ number_format($contract['Revised_qty_pcs']) }}</td>
+                                        <td>{{ $contract['Revised_date'] }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
 
                 </div>
                 <div class="modal-footer">
@@ -581,36 +582,36 @@ foreach ($udHistory as $record) {
                     </button>
                 </div>
                 <div class="modal-body">
-                   <!-- UD History Modal Display -->
-@if ($contract->ud_history)
-<div class="mt-4">
-    <h5>UD History</h5>
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>UD No.</th>
-                <th>Value</th>
-                <th>Qty (PCS)</th>
-                <th>Used Value</th>
-                <th>Bank</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($contract->ud_history as $history)
-                <tr>
-                    <td>{{ $history['ud_no'] }}</td>
-                    <td>${{ number_format($history['ud_value'], 2) }}</td>
-                    <td>{{ number_format($history['ud_qty_pcs']) }}</td>
-                    <td>${{ number_format($history['used_value'], 2) }}</td>
-                    <td>{{ $history['bank_name'] }}</td>
-                    <td>{{ $history['ud_date'] }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
-@endif
+                    <!-- UD History Modal Display -->
+                    @if ($contract->ud_history)
+                        <div class="mt-4">
+                            <h5>UD History</h5>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>UD No.</th>
+                                        <th>Value</th>
+                                        <th>Qty (PCS)</th>
+                                        <th>Used Value</th>
+                                        <th>Bank</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($contract->ud_history as $history)
+                                        <tr>
+                                            <td>{{ $history['ud_no'] }}</td>
+                                            <td>${{ number_format($history['ud_value'], 2) }}</td>
+                                            <td>{{ number_format($history['ud_qty_pcs']) }}</td>
+                                            <td>${{ number_format($history['used_value'], 2) }}</td>
+                                            <td>{{ $history['bank_name'] }}</td>
+                                            <td>{{ $history['ud_date'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -641,85 +642,41 @@ foreach ($udHistory as $record) {
         });
     </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get base values from PHP
-            const salesContractValue = {{ $totalContractValue }};
-            const exportValue = {{ $exportValue }};
-            let totalBtbValue = 0;
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get base values from PHP
+        const salesContractValue = {{ $totalContractValue }};
+        const exportValue = {{ $exportValue }};
+        let totalBtbValue = 0;
 
-            // Calculate percentages for each row
-            document.querySelectorAll('.btb-row').forEach(row => {
-                const amount = parseFloat(row.querySelector('td[data-value]').dataset.value) || 0;
-                totalBtbValue += amount;
+        // Calculate percentages for each row
+        document.querySelectorAll('.btb-row').forEach(row => {
+            const amount = parseFloat(row.querySelector('td[data-value]').dataset.value) || 0;
+            totalBtbValue += amount;
 
-                const contractPercent = salesContractValue > 0 ?
-                    (amount / salesContractValue * 100).toFixed(2) :
-                    '0.00';
+            // Calculate percentages relative to contract and export values
+            const contractPercent = salesContractValue > 0 ? 
+                (amount / salesContractValue * 100).toFixed(2) : '0.00';
+                
+            const exportPercent = exportValue > 0 ? 
+                (amount / exportValue * 100).toFixed(2) : '0.00';
 
-                const exportPercent = exportValue > 0 ?
-                    (amount / exportValue * 100).toFixed(2) :
-                    '0.00';
-
-                row.querySelector('.contract-percent').textContent = `${contractPercent}%`;
-                row.querySelector('.export-percent').textContent = `${exportPercent}%`;
-            });
-
-            // Calculate totals
-            document.getElementById('totalBtbAmount').textContent =
-                `$${totalBtbValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-
-            const totalContractPercent = salesContractValue > 0 ?
-                (totalBtbValue / salesContractValue * 100).toFixed(2) :
-                '0.00';
-
-            const totalExportPercent = exportValue > 0 ?
-                (totalBtbValue / exportValue * 100).toFixed(2) :
-                '0.00';
-
-            document.getElementById('totalContractPercent').textContent = `${totalContractPercent}%`;
-            document.getElementById('totalExportPercent').textContent = `${totalExportPercent}%`;
+            row.querySelector('.contract-percent').textContent = `${contractPercent}%`;
+            row.querySelector('.export-percent').textContent = `${exportPercent}%`;
         });
-    </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get base values from PHP
-            const salesContractValue = {{ $contract->sales_contract_value }};
-            const exportValue = {{ $contract->export_value }};
-            let totalBtbValue = 0;
+        // Calculate totals
+        document.getElementById('totalBtbAmount').textContent =
+            `$${totalBtbValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
-            // Calculate percentages for each row
-            document.querySelectorAll('.btb-row').forEach(row => {
-                const amount = parseFloat(row.querySelector('td[data-value]').dataset.value) || 0;
-                totalBtbValue += amount;
+        const totalContractPercent = salesContractValue > 0 ? 
+            (totalBtbValue / salesContractValue * 100).toFixed(2) : '0.00';
+            
+        const totalExportPercent = exportValue > 0 ? 
+            (totalBtbValue / exportValue * 100).toFixed(2) : '0.00';
 
-                const contractPercent = salesContractValue > 0 ?
-                    (amount / salesContractValue * 100).toFixed(2) :
-                    '0.00';
-
-                const exportPercent = exportValue > 0 ?
-                    (amount / exportValue * 100).toFixed(2) :
-                    '0.00';
-
-                row.querySelector('.contract-percent').textContent = `${contractPercent}%`;
-                row.querySelector('.export-percent').textContent = `${exportPercent}%`;
-            });
-
-            // Calculate totals
-            document.getElementById('totalBtbAmount').textContent =
-                `$${totalBtbValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-
-            const totalContractPercent = salesContractValue > 0 ?
-                (totalBtbValue / salesContractValue * 100).toFixed(2) :
-                '0.00';
-
-            const totalExportPercent = exportValue > 0 ?
-                (totalBtbValue / exportValue * 100).toFixed(2) :
-                '0.00';
-
-            document.getElementById('totalContractPercent').textContent = `${totalContractPercent}%`;
-            document.getElementById('totalExportPercent').textContent = `${totalExportPercent}%`;
-        });
-    </script>
+        document.getElementById('totalContractPercent').textContent = `${totalContractPercent}%`;
+        document.getElementById('totalExportPercent').textContent = `${totalExportPercent}%`;
+    });
+</script>
 </x-backend.layouts.master>
