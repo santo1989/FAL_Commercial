@@ -159,14 +159,14 @@
                                 <tr>
                                     <td>{{ $contract->sales_contract_no }}</td>
                                     <td>{{ $contract->buyer_name }}</td>
-                                    <td>${{ number_format($sales_contract_value, 2) }}</td>
+                                    <td>${{ number_format($sales_contract_value, 0) }}</td>
                                     <td>{{ number_format($quantity_pcs) }}</td>
 
-                                    <td>${{ number_format($fob, 4) }}</td>
+                                    <td>${{ number_format($fob, 2) }}</td>
                                     <!-- New columns data -->
-                                    <td>${{ number_format($exportValue, 2) }}</td>
-                                    <td>${{ number_format($realizationValue, 2) }}</td>
-                                    <td>${{ number_format($btbValue, 2) }}</td>
+                                    <td>${{ number_format($exportValue, 0) }}</td>
+                                    <td>${{ number_format($realizationValue, 0) }}</td>
+                                    <td>${{ number_format($btbValue, 0) }}</td>
                                     <td>{{ number_format($btbPercentage, 2) }}%</td>
                                     <!-- End new columns -->
                                     <td>
