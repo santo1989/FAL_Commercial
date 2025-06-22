@@ -131,6 +131,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/sales-contracts/{contract}/ud', [SalesContractController::class, 'storeUD'])->name('sales-contracts.ud.store');
     Route::post('/sales-contracts/{contract}/revised', [SalesContractController::class, 'storeRevised'])->name('sales-contracts.revised.store');
 
+    // Add this route definition
+    Route::put('sales-contracts/{contract}/closed', [SalesContractController::class, 'closed'])
+        ->name('sales-contracts.closed');
+
     // // Excel Import/Export Routes
     // Route::prefix('excel')->group(function () {
     //     // Imports

@@ -284,4 +284,17 @@ class SalesContractController extends Controller
 
         return redirect()->back()->withMessage( 'Revised details updated!');
     }
+
+    public function closed(Request $request, SalesContract $contract)
+    {
+        $request->validate([
+            'status' => 'required|in:live,closed'
+        ]);
+
+        $contract->update([
+            'data_4' => $request->status
+        ]);
+
+        return back()->withMessage('Status updated!');
+    }
 }
