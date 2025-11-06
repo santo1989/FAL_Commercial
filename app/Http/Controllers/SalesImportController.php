@@ -11,14 +11,51 @@ use Illuminate\Support\Facades\Storage;
 use App\Imports\SalesImport as ImportSales;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SalesImportsExport;
+use Barryvdh\DomPDF\Facades\Pdf;
 
 
 class SalesImportController extends Controller
 {
-    
-    public function index()
+
+    public function index(Request $request)
     {
-        $imports = SalesImport::with('salesContract')->paginate(10);
+        $query = SalesImport::with('salesContract');
+
+        // Filter by buyer via related sales contract
+        if ($request->filled('buyer_id')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('buyer_id', $request->buyer_id);
+            });
+        }
+
+        // Filter by contract number
+        if ($request->filled('contract_no')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('sales_contract_no', $request->contract_no);
+            });
+        }
+
+        // Filter by import date range
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('date', [$request->contract_date_from, $request->contract_date_to]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('date', '<=', $request->contract_date_to);
+        }
+
+        // Generic search across contract no and buyer name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('salesContract', function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $imports = $query->orderBy('date', 'desc')->paginate(10)->appends($request->all());
+
         return view('sales-imports.index', compact('imports'));
     }
 
@@ -26,7 +63,6 @@ class SalesImportController extends Controller
     {
         $contracts = \App\Models\SalesContract::all();
         return view('sales-imports.create', compact('contracts'));
-        
     }
 
     public function store(Request $request)
@@ -46,16 +82,16 @@ class SalesImportController extends Controller
 
         SalesImport::create($validatedData);
 
-        return redirect()->route('sales-imports.index')->withMessage( 'Sales Import created successfully.');
+        return redirect()->route('sales-imports.index')->withMessage('Sales Import created successfully.');
     }
 
-   
+
     public function show(SalesImport $salesImport)
     {
         return view('sales-imports.show', compact('salesImport'));
     }
 
- 
+
     public function edit(SalesImport $salesImport)
     {
         // Check if the sales import exists
@@ -64,7 +100,7 @@ class SalesImportController extends Controller
         return view('sales-imports.edit', compact('import', 'contracts'));
     }
 
-  
+
     public function update(Request $request, SalesImport $salesImport)
     {
         // dd($salesImport);
@@ -83,7 +119,7 @@ class SalesImportController extends Controller
 
         $salesImport->update($validatedData);
 
-        return redirect()->route('sales-imports.index')->withMessage( 'Sales Import updated successfully.');
+        return redirect()->route('sales-imports.index')->withMessage('Sales Import updated successfully.');
     }
 
 
@@ -136,6 +172,93 @@ class SalesImportController extends Controller
         ]);
     }
 
+    /**
+     * Export filtered imports to Excel
+     */
+    public function export(Request $request)
+    {
+        $query = SalesImport::with('salesContract');
+
+        if ($request->filled('buyer_id')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('buyer_id', $request->buyer_id);
+            });
+        }
+
+        if ($request->filled('contract_no')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('sales_contract_no', $request->contract_no);
+            });
+        }
+
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('date', [$request->contract_date_from, $request->contract_date_to]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('date', '<=', $request->contract_date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('salesContract', function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $imports = $query->orderBy('date', 'desc')->get();
+
+        return Excel::download(new SalesImportsExport($imports), 'sales_imports_' . now()->format('Ymd_His') . '.xlsx');
+    }
+
+    /**
+     * Export filtered imports to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        if (!class_exists(Pdf::class)) {
+            abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
+        }
+
+        $query = SalesImport::with('salesContract');
+
+        if ($request->filled('buyer_id')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('buyer_id', $request->buyer_id);
+            });
+        }
+
+        if ($request->filled('contract_no')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('sales_contract_no', $request->contract_no);
+            });
+        }
+
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('date', [$request->contract_date_from, $request->contract_date_to]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('date', '<=', $request->contract_date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('salesContract', function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $imports = $query->orderBy('date', 'desc')->get();
+
+        $pdf = Pdf::loadView('sales-imports.pdf', compact('imports'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('sales_imports_' . now()->format('Ymd_His') . '.pdf');
+    }
+
     private function normalizeRowKeys($row)
     {
         $normalized = [];
@@ -184,7 +307,7 @@ class SalesImportController extends Controller
             DB::commit();
 
             return redirect()->route('sales-contracts.show', $contractId)
-                ->withMessage( 'Import data processed successfully.');
+                ->withMessage('Import data processed successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SalesExport;
 use Illuminate\Http\Request;
-use App\Models\SalesImport; 
+use App\Models\SalesImport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -12,24 +12,61 @@ use App\Imports\SalesExport as ImportExports;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
+use App\Exports\SalesExportsExport;
+use Barryvdh\DomPDF\Facades\Pdf;
 
 class SalesExportController extends Controller
 {
-    
-    public function index()
+
+    public function index(Request $request)
     {
-        $exports = SalesExport::with('Salescontract')->paginate(10);
+        $query = SalesExport::with('salesContract');
+
+        // Filter by buyer via related sales contract
+        if ($request->filled('buyer_id')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('buyer_id', $request->buyer_id);
+            });
+        }
+
+        // Filter by contract number
+        if ($request->filled('contract_no')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('sales_contract_no', $request->contract_no);
+            });
+        }
+
+        // Filter by shipment date range
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('shipment_date', [$request->contract_date_from, $request->contract_date_to]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('shipment_date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('shipment_date', '<=', $request->contract_date_to);
+        }
+
+        // Generic search across contract no and buyer name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('salesContract', function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $exports = $query->orderBy('shipment_date', 'desc')->paginate(10)->appends($request->all());
+
         return view('sales-exports.index', compact('exports'));
     }
 
-    
+
     public function create()
     {
         $contracts = \App\Models\SalesContract::all();
         return view('sales-exports.create', compact('contracts'));
     }
 
-   
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -45,10 +82,10 @@ class SalesExportController extends Controller
 
         SalesExport::create($validatedData);
 
-        return redirect()->route('sales-exports.index')->withMessage( 'Sales Export created successfully.');
+        return redirect()->route('sales-exports.index')->withMessage('Sales Export created successfully.');
     }
 
-   
+
     public function show(SalesExport $salesExport)
     {
         // Ensure the export exists
@@ -57,7 +94,7 @@ class SalesExportController extends Controller
         return view('sales-exports.show', compact('export', 'contracts'));
     }
 
-   
+
     public function edit(SalesExport $salesExport)
     {
         // Ensure the export exists
@@ -66,7 +103,7 @@ class SalesExportController extends Controller
         return view('sales-exports.edit', compact('export', 'contracts'));
     }
 
-  
+
     public function update(Request $request, SalesExport $salesExport)
     {
         // 
@@ -80,40 +117,40 @@ class SalesExportController extends Controller
             'date_of_realized' => 'nullable|date',
             'due_amount_usd' => 'nullable|numeric',
             'shipment_date' => 'nullable|date'
-            
+
         ]);
         // Ensure the export exists
         $salesExport = SalesExport::findOrFail($salesExport->id);
         // Update the export with validated data
         $validatedData['shipment_date'] = $validatedData['shipment_date'] ?? null;
         $validatedData['due_amount_usd'] = $validatedData['due_amount_usd'] ?? 0;
-      
+
 
         $salesExport->update($validatedData);
 
-        return redirect()->route('sales-exports.index')->withMessage( 'Sales Export updated successfully.');
+        return redirect()->route('sales-exports.index')->withMessage('Sales Export updated successfully.');
     }
 
-    
+
     public function destroy(SalesExport $salesExport)
     {
-    //    dd($salesExport);
+        //    dd($salesExport);
         // Ensure the export exists
         $salesExport = SalesExport::findOrFail($salesExport->id);
         $salesExport->delete();
         return redirect()->back()->withMessage('Sales Export deleted successfully.');
     }
 
-    
 
-   // Excel upload Handling
+
+    // Excel upload Handling
     public function downloadExportTemplate()
     {
         return response()->download(public_path('templates/export_template.xlsx'));
     }
 
-    
-   
+
+
 
     public function confirmImport(Request $request)
     {
@@ -180,6 +217,93 @@ class SalesExportController extends Controller
         return redirect()->route('export.confirmation');
     }
 
+    /**
+     * Export filtered exports to Excel
+     */
+    public function export(Request $request)
+    {
+        $query = SalesExport::with('salesContract');
+
+        if ($request->filled('buyer_id')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('buyer_id', $request->buyer_id);
+            });
+        }
+
+        if ($request->filled('contract_no')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('sales_contract_no', $request->contract_no);
+            });
+        }
+
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('shipment_date', [$request->contract_date_from, $request->contract_date_to]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('shipment_date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('shipment_date', '<=', $request->contract_date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('salesContract', function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $exports = $query->orderBy('shipment_date', 'desc')->get();
+
+        return Excel::download(new SalesExportsExport($exports), 'sales_exports_' . now()->format('Ymd_His') . '.xlsx');
+    }
+
+    /**
+     * Export filtered exports to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        if (!class_exists(Pdf::class)) {
+            abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
+        }
+
+        $query = SalesExport::with('salesContract');
+
+        if ($request->filled('buyer_id')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('buyer_id', $request->buyer_id);
+            });
+        }
+
+        if ($request->filled('contract_no')) {
+            $query->whereHas('salesContract', function ($q) use ($request) {
+                $q->where('sales_contract_no', $request->contract_no);
+            });
+        }
+
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('shipment_date', [$request->contract_date_from, $request->contract_date_to]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('shipment_date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('shipment_date', '<=', $request->contract_date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('salesContract', function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $exports = $query->orderBy('shipment_date', 'desc')->get();
+
+        $pdf = Pdf::loadView('sales-exports.pdf', compact('exports'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('sales_exports_' . now()->format('Ymd_His') . '.pdf');
+    }
+
 
     private function remapExportData($data)
     {
@@ -244,7 +368,7 @@ class SalesExportController extends Controller
             DB::commit();
 
             return redirect()->route('sales-contracts.show', $contractId)
-                ->withMessage( 'Export data imported successfully.');
+                ->withMessage('Export data imported successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()

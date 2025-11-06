@@ -6,6 +6,9 @@ use App\Models\Buyer;
 use App\Models\SalesContract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SalesContractsExport;
+use Barryvdh\DomPDF\Facades\Pdf;
 
 class SalesContractController extends Controller
 {
@@ -67,6 +70,89 @@ class SalesContractController extends Controller
         return view('sales-contracts.index', compact('contracts'));
     }
 
+    /**
+     * Export filtered contracts to Excel
+     */
+    public function export(Request $request)
+    {
+        // duplicate filters from index so export contains same data
+        $query = SalesContract::query();
+        $query->with(['imports', 'exports']);
+
+        if ($request->filled('buyer_id')) {
+            $query->where('buyer_id', $request->buyer_id);
+        }
+
+        if ($request->filled('contract_no')) {
+            $query->where('sales_contract_no', $request->contract_no);
+        }
+
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('contract_date', [
+                $request->contract_date_from,
+                $request->contract_date_to
+            ]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('contract_date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('contract_date', '<=', $request->contract_date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $contracts = $query->orderBy('contract_date', 'desc')->get();
+
+        return Excel::download(new SalesContractsExport($contracts), 'sales_contracts_' . now()->format('Ymd_His') . '.xlsx');
+    }
+
+    /**
+     * Export filtered contracts to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        if (!class_exists(Pdf::class)) {
+            abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
+        }
+
+        // reuse the same filtering logic as export()
+        $query = SalesContract::query();
+        $query->with(['imports', 'exports']);
+
+        if ($request->filled('buyer_id')) {
+            $query->where('buyer_id', $request->buyer_id);
+        }
+        if ($request->filled('contract_no')) {
+            $query->where('sales_contract_no', $request->contract_no);
+        }
+        if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+            $query->whereBetween('contract_date', [$request->contract_date_from, $request->contract_date_to]);
+        } elseif ($request->filled('contract_date_from')) {
+            $query->whereDate('contract_date', '>=', $request->contract_date_from);
+        } elseif ($request->filled('contract_date_to')) {
+            $query->whereDate('contract_date', '<=', $request->contract_date_to);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('sales_contract_no', 'like', "%{$search}%")
+                    ->orWhere('buyer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $contracts = $query->orderBy('contract_date', 'desc')->get();
+
+        $pdf = Pdf::loadView('sales-contracts.pdf', compact('contracts'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('sales_contracts_' . now()->format('Ymd_His') . '.pdf');
+    }
+
     public function create()
     {
         return view('sales-contracts.create');
@@ -116,7 +202,7 @@ class SalesContractController extends Controller
                         'sales_contract_value' => $contract->sales_contract_value,
                         'quantity_pcs' => $contract->quantity_pcs,
                         'contract_date' => $contract->contract_date,
-                       
+
                     ]
                 ]);
 
@@ -127,17 +213,17 @@ class SalesContractController extends Controller
                     'contract_date' => $validatedData['contract_date'],
                     'sales_contract_value' => $validatedData['sales_contract_value'],
                     'quantity_pcs' => $validatedData['quantity_pcs'],
-                    
+
                 ]);
             } else {
-               $sales_data = SalesContract::create([
+                $sales_data = SalesContract::create([
                     'buyer_id' => $validatedData['buyer_id'],
                     'buyer_name' => $buyerName,
                     'sales_contract_no' => $validatedData['sales_contract_no'],
                     'contract_date' => $validatedData['contract_date'],
                     'sales_contract_value' => $validatedData['sales_contract_value'],
                     'quantity_pcs' => $validatedData['quantity_pcs'],
-                    
+
                 ]);
             }
 
@@ -162,7 +248,7 @@ class SalesContractController extends Controller
         ]);
     }
 
-    
+
     public function edit(SalesContract $SalesContract)
     {
         return view('sales-contracts.edit', [
@@ -171,7 +257,7 @@ class SalesContractController extends Controller
         ]);
     }
 
-   
+
     public function update(Request $request, SalesContract $SalesContract)
     {
         $validatedData = $request->validate([
@@ -194,10 +280,10 @@ class SalesContractController extends Controller
             'quantity_pcs' => $validatedData['quantity_pcs'],
         ]);
 
-        return redirect()->route('sales-contracts.index')->withMessage( 'Contract updated successfully.');
+        return redirect()->route('sales-contracts.index')->withMessage('Contract updated successfully.');
     }
 
-  
+
     public function destroy(SalesContract $SalesContract)
     {
         //check if the contract has any related imports or exports
@@ -205,7 +291,7 @@ class SalesContractController extends Controller
             return redirect()->back()->withErrors('Cannot delete contract with related imports or exports.');
         }
         $SalesContract->delete();
-        return redirect()->route('sales-contracts.index')->withMessage( 'Contract deleted successfully.');
+        return redirect()->route('sales-contracts.index')->withMessage('Contract deleted successfully.');
     }
 
     public function storeUD(Request $request, SalesContract $contract)
@@ -248,7 +334,7 @@ class SalesContractController extends Controller
         // 3) Save everything in one go
         $contract->save();
 
-        return back()->withMessage( 'UD details updated!');
+        return back()->withMessage('UD details updated!');
     }
 
 
@@ -282,7 +368,7 @@ class SalesContractController extends Controller
 
         $contract->save();
 
-        return redirect()->back()->withMessage( 'Revised details updated!');
+        return redirect()->back()->withMessage('Revised details updated!');
     }
 
     public function closed(Request $request, SalesContract $contract)

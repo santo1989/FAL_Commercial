@@ -20,59 +20,69 @@
         </div>
 
         <div class="card">
-            <!--card heard for searching and filtering-->
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Search and Filter</h5>
-                <form action="{{ route('sales-contracts.index') }}" method="GET" class="form-inline">
-                    <select name="buyer_id" class="form-control mr-2">
-                        @php
-                            $buyers = \App\Models\SalesContract::select('buyer_id')->distinct()->get(); // Fetch all distinct buyer IDs from the contracts
-                            $buyers = \App\Models\Buyer::whereIn('id', $buyers)->get(); // Fetch all buyers based on the distinct IDs
-                            // Fetch all buyers from the database
-                            $selectedBuyer = request('buyer_id'); // Get the selected buyer ID from the request
-                        @endphp
-                        <option value="">Select Buyer</option>
-                        @foreach ($buyers as $buyer)
-                            <option value="{{ $buyer->id }}"
-                                {{ request('buyer_id') == $buyer->id ? 'selected' : '' }}>
-                                {{ $buyer->name }}
-                            </option>
-                        @endforeach
-                    </select>
+            <!-- card header: responsive single-row layout -->
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex flex-row flex-wrap align-items-center justify-content-between gap-2">
+                    <form action="{{ route('sales-contracts.index') }}" method="GET" class="d-flex flex-row flex-wrap align-items-center flex-grow-1 gap-2">
+                        <div>
+                            <select name="buyer_id" class="form-control">
+                                @php
+                                    $buyers = \App\Models\SalesContract::select('buyer_id')->distinct()->get();
+                                    $buyers = \App\Models\Buyer::whereIn('id', $buyers)->get();
+                                @endphp
+                                <option value="">Buyer</option>
+                                @foreach ($buyers as $buyer)
+                                    <option value="{{ $buyer->id }}" {{ request('buyer_id') == $buyer->id ? 'selected' : '' }}>
+                                        {{ $buyer->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                    @php
-                        $Sales_contracts = \App\Models\SalesContract::select('sales_contract_no')->distinct()->get(); // Fetch all distinct contract numbers from the contracts
-                        $Sales_contracts = \App\Models\SalesContract::whereIn(
-                            'sales_contract_no',
-                            $Sales_contracts,
-                        )->get(); // Fetch all contracts based on the distinct numbers
-                    @endphp
-                    <select name="contract_no" class="form-control mr-2">
-                        <option value="">Select Contract No.</option>
-                        @foreach ($Sales_contracts as $contract)
-                            <option value="{{ $contract->sales_contract_no }}"
-                                {{ request('contract_no') == $contract->sales_contract_no ? 'selected' : '' }}>
-                                {{ $contract->sales_contract_no }}
-                            </option>
-                        @endforeach
-                    </select>
+                        <div>
+                            @php
+                                $Sales_contracts = \App\Models\SalesContract::select('sales_contract_no')->distinct()->get();
+                                $Sales_contracts = \App\Models\SalesContract::whereIn('sales_contract_no', $Sales_contracts)->get();
+                            @endphp
+                            <select name="contract_no" class="form-control">
+                                <option value="">Contract No.</option>
+                                @foreach ($Sales_contracts as $contract)
+                                    <option value="{{ $contract->sales_contract_no }}" {{ request('contract_no') == $contract->sales_contract_no ? 'selected' : '' }}>
+                                        {{ $contract->sales_contract_no }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                    <!--date range filter-->
-                    <label for="contract_date_to" class="mr-2">Start Date:</label>
-                    <input type="date" name="contract_date_to" class="form-control mr-2" placeholder="Start Date"
-                        value="{{ request('contract_date_to') }}">
-                    <label for="contract_date_from" class="mr-2">End Date:</label>
-                    <input type="date" name="contract_date_from" class="form-control mr-2" placeholder="End Date"
-                        value="{{ request('contract_date_from') }}">
+                        <div class="d-flex gap-2">
+                            <input type="date" name="contract_date_to" class="form-control" value="{{ request('contract_date_to') }}" title="Start date">
+                            <input type="date" name="contract_date_from" class="form-control" value="{{ request('contract_date_from') }}" title="End date">
+                        </div>
 
-                    <input type="text" name="search" class="form-control mr-2"
-                        placeholder="Search by buyer name, contract no" value="{{ request('search') }}">
-                    <button type="submit" class="btn btn-light">Search</button>
-                </form>
-                <!--reset--filter button-->
-                <form action="{{ route('sales-contracts.index') }}" method="GET" class="form-inline">
-                    <button type="submit" class="btn btn-light ml-2">Reset Filter</button>
-                </form>
+                        <div class="flex-fill">
+                            <input type="text" name="search" class="form-control" placeholder="Search buyer or contract no" value="{{ request('search') }}">
+                        </div>
+
+                        <div>
+                            <button type="submit" class="btn btn-light">Search</button>
+                        </div>
+                    </form>
+
+                    <div class="d-flex align-items-center">
+                        <form action="{{ route('sales-contracts.index') }}" method="GET" class="me-2">
+                            <button type="submit" class="btn btn-light">Reset</button>
+                        </form>
+
+                        @can('Sales-CURD')
+                            <a href="{{ route('sales-contracts.export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success me-2" title="Export filtered results to Excel">
+                                <i class="fas fa-file-excel"></i>
+                            </a>
+                            <a href="{{ route('sales-contracts.pdf') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-danger" title="Download PDF of filtered results">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                        @endcan
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -186,19 +196,19 @@
                                     <!-- live or Closed status in dropdown, if status is live then show green color, if closed then show red color, and can be clicked to change status -->
                                     <td>
                                         @can('Sales-CURD')
-                                        <form action="{{ route('sales-contracts.closed', $contract->id) }}"
-                                            method="POST" id="status-form-{{ $contract->id }}">
-                                            @csrf
-                                            @method('PUT')
-                                            <select class="form-control form-control-sm" name="status"
-                                                onchange="this.form.submit()">
-                                                <option value="live"
-                                                    {{ $contract->data_4 == 'live' ? 'selected' : '' }}>Live</option>
-                                                <option value="closed"
-                                                    {{ $contract->data_4 == 'closed' ? 'selected' : '' }}>Closed
-                                                </option>
-                                            </select>
-                                        </form>
+                                            <form action="{{ route('sales-contracts.closed', $contract->id) }}"
+                                                method="POST" id="status-form-{{ $contract->id }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <select class="form-control form-control-sm" name="status"
+                                                    onchange="this.form.submit()">
+                                                    <option value="live"
+                                                        {{ $contract->data_4 == 'live' ? 'selected' : '' }}>Live</option>
+                                                    <option value="closed"
+                                                        {{ $contract->data_4 == 'closed' ? 'selected' : '' }}>Closed
+                                                    </option>
+                                                </select>
+                                            </form>
                                         @endcan
                                     </td>
                                     <td>

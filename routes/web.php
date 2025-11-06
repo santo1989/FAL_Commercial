@@ -124,7 +124,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/get_supplier', [SupplierController::class, 'get_supplier'])->name('get_supplier');
 
     //sales info
+    // Excel export for filtered contract list (register BEFORE the resource to avoid route parameter collisions)
+    Route::get('sales-contracts/export', [SalesContractController::class, 'export'])->name('sales-contracts.export');
+    // PDF route for contracts must also be registered BEFORE the resource route so "pdf" won't be treated as an {id}
+    Route::get('sales-contracts/pdf', [SalesContractController::class, 'exportPdf'])->name('sales-contracts.pdf');
     Route::resource('sales-contracts', SalesContractController::class);
+
+    // Export routes for filtered lists (place before resource routes to avoid collisions)
+    Route::get('sales-imports/export', [SalesImportController::class, 'export'])->name('sales-imports.export');
+    Route::get('sales-exports/export', [SalesExportController::class, 'export'])->name('sales-exports.export');
+    // PDF routes for filtered import/export lists (also before their resource routes)
+    Route::get('sales-imports/pdf', [SalesImportController::class, 'exportPdf'])->name('sales-imports.pdf');
+    Route::get('sales-exports/pdf', [SalesExportController::class, 'exportPdf'])->name('sales-exports.pdf');
+
     Route::resource('sales-imports', SalesImportController::class);
     Route::resource('sales-exports', SalesExportController::class);
     // Add these routes
@@ -170,7 +182,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/export/confirmation', [SalesExportController::class, 'showExportConfirmation'])
         ->name('export.confirmation');
-
+    
+    // (temporary PDF debug route removed) Use the controllers' exportPdf methods instead
 });
 
 
