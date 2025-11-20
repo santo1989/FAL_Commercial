@@ -120,7 +120,7 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-contracts') }} ">
+                                        href="{{ route('sales-contracts.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Sales Contract
                                     </a>
@@ -128,7 +128,7 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-imports') }} ">
+                                        href="{{ route('sales-imports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         import
                                     </a>
@@ -136,7 +136,15 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-exports') }} ">
+                                        href="{{ route('btb-lcs.index') }}">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
+                                        BTB LCs
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ route('sales-exports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Export
                                     </a>
@@ -150,7 +158,7 @@
                             <div class="row justify-content-center">
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-contracts') }} ">
+                                        href="{{ route('sales-contracts.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Sales Contract
                                     </a>
@@ -158,7 +166,7 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-imports') }} ">
+                                        href="{{ route('sales-imports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         import
                                     </a>
@@ -166,9 +174,17 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-exports') }} ">
+                                        href="{{ route('sales-exports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Export
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ route('btb-lcs.index') }}">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
+                                        BTB LCs
                                     </a>
 
                                 </div>
@@ -180,7 +196,7 @@
                             <div class="row justify-content-center">
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-contracts') }} ">
+                                        href="{{ route('sales-contracts.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Sales Contract
                                     </a>
@@ -188,7 +204,7 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-imports') }} ">
+                                        href="{{ route('sales-imports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         import
                                     </a>
@@ -196,9 +212,18 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-exports') }} ">
+                                        href="{{ route('sales-exports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Export
+                                    </a>
+
+                                </div>
+
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/btb-lcs') }}">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
+                                        BTB LCs
                                     </a>
 
                                 </div>
@@ -210,7 +235,7 @@
                             <div class="row justify-content-center">
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-contracts') }} ">
+                                        href="{{ route('sales-contracts.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Sales Contract
                                     </a>
@@ -218,11 +243,18 @@
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-imports') }} ">
+                                        href="{{ route('sales-imports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         import
                                     </a>
 
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/btb-lcs') }}">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
+                                        BTB LCs
+                                    </a>
                                 </div>
                             </div>
                         @endcan
@@ -230,7 +262,7 @@
                             <div class="row justify-content-center">
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-contracts') }} ">
+                                        href="{{ route('sales-contracts.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Sales Contract
                                     </a>
@@ -239,9 +271,17 @@
 
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ url('/sales-exports') }} ">
+                                        href="{{ route('sales-exports.index') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                                         Export
+                                    </a>
+
+                                </div>
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ url('/btb-lcs') }}">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
+                                        BTB LCs
                                     </a>
 
                                 </div>

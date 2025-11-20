@@ -19,4 +19,11 @@ class SalesExport extends Model
     {
         return $this->hasMany(SalesImport::class, 'contract_id', 'contract_id');
     }
+
+    public function btbLc()
+    {
+        // Return the first BTB/LC for this contract. If you have an LC number on SalesExport,
+        // update this relation to match by LC number as well.
+        return $this->hasOne(BtbLc::class, 'contract_id', 'contract_id');
+    }
 }

@@ -20,5 +20,14 @@ class SalesImport extends Model
         return $this->hasMany(SalesExport::class, 'contract_id', 'contract_id');
     }
 
+    /**
+     * BTB LCs linked to this import record
+     */
+    public function btbLcs()
+    {
+        return $this->hasMany(\App\Models\BtbLc::class, 'import_id');
+    }
+
     
 }
+

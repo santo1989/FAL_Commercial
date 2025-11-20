@@ -59,7 +59,7 @@
                                 $buyers = \App\Models\SalesContract::select('buyer_id')->distinct()->get();
                                 $buyers = \App\Models\Buyer::whereIn('id', $buyers)->get();
                             @endphp
-                            <select name="buyer_id" class="form-control">
+                            <select name="buyer_id" class="form-control form-control-sm select2" aria-label="Filter by buyer">
                                 <option value="">Buyer</option>
                                 @foreach ($buyers as $buyer)
                                     <option value="{{ $buyer->id }}" {{ request('buyer_id') == $buyer->id ? 'selected' : '' }}>{{ $buyer->name }}</option>
@@ -72,7 +72,7 @@
                                 $Sales_contracts = \App\Models\SalesContract::select('sales_contract_no')->distinct()->get();
                                 $Sales_contracts = \App\Models\SalesContract::whereIn('sales_contract_no', $Sales_contracts)->get();
                             @endphp
-                            <select name="contract_no" class="form-control">
+                            <select name="contract_no" class="form-control form-control-sm select2" aria-label="Filter by contract">
                                 <option value="">Contract No.</option>
                                 @foreach ($Sales_contracts as $contract)
                                     <option value="{{ $contract->sales_contract_no }}" {{ request('contract_no') == $contract->sales_contract_no ? 'selected' : '' }}>{{ $contract->sales_contract_no }}</option>
@@ -81,12 +81,12 @@
                         </div>
 
                         <div class="d-flex gap-2">
-                            <input type="date" name="contract_date_from" class="form-control" value="{{ request('contract_date_from') }}" title="From">
-                            <input type="date" name="contract_date_to" class="form-control" value="{{ request('contract_date_to') }}" title="To">
+                            <input type="date" name="contract_date_from" class="form-control form-control-sm" value="{{ request('contract_date_from') }}" title="From">
+                            <input type="date" name="contract_date_to" class="form-control form-control-sm" value="{{ request('contract_date_to') }}" title="To">
                         </div>
 
                         <div class="flex-fill">
-                            <input type="text" name="search" class="form-control" placeholder="Search buyer or contract no" value="{{ request('search') }}">
+                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Search buyer or contract no" value="{{ request('search') }}" aria-label="Search">
                         </div>
 
                         <div>
@@ -96,15 +96,21 @@
 
                     <div class="d-flex align-items-center">
                         <form action="{{ route('sales-exports.index') }}" method="GET" class="me-2">
-                            <button type="submit" class="btn btn-light">Reset</button>
+                            <button type="submit" class="btn btn-sm btn-light">Reset</button>
                         </form>
 
                         @can('Export-CURD')
-                            <a href="{{ route('sales-exports.export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-light me-2" title="Export filtered exports to Excel">
-                                <i class="fas fa-file-excel"></i>
+                            <a href="{{ route('sales-exports.export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-sm btn-success me-2" title="Export filtered exports to Excel" aria-label="Export to Excel">
+                                <i class="fas fa-file-excel"></i> <span class="d-none d-md-inline">Export</span>
                             </a>
-                            <a href="{{ route('sales-exports.pdf') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-danger" title="Download PDF of filtered exports">
-                                <i class="fas fa-file-pdf"></i>
+                            <a href="{{ route('sales-exports.pdf') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-sm btn-danger me-2" title="Download PDF of filtered exports" aria-label="Download PDF">
+                                <i class="fas fa-file-pdf"></i> <span class="d-none d-md-inline">PDF</span>
+                            </a>
+                            <a href="{{ route('sales-exports.report') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-sm btn-primary me-2" title="Download Export Report (Excel)">
+                                <i class="fas fa-file-lines"></i> <span class="d-none d-md-inline">Report</span>
+                            </a>
+                            <a href="{{ route('sales-exports.report.pdf') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-sm btn-secondary" title="Download Export Report (PDF)">
+                                <i class="fas fa-file-pdf"></i> <span class="d-none d-md-inline">Report PDF</span>
                             </a>
                         @endcan
                     </div>

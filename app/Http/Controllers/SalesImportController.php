@@ -12,7 +12,10 @@ use App\Imports\SalesImport as ImportSales;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SalesImportsExport;
+use App\Exports\SalesImportReportExport;
+use App\Models\BtbLc;
 use Barryvdh\DomPDF\Facades\Pdf;
+use Illuminate\Support\Facades\Log;
 
 
 class SalesImportController extends Controller
@@ -217,20 +220,69 @@ class SalesImportController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        if (!class_exists(Pdf::class)) {
-            abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
-        }
+        try {
+            if (!class_exists(Pdf::class)) {
+                abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
+            }
 
-        $query = SalesImport::with('salesContract');
+            $query = SalesImport::with('salesContract');
+
+            if ($request->filled('buyer_id')) {
+                $query->whereHas('salesContract', function ($q) use ($request) {
+                    $q->where('buyer_id', $request->buyer_id);
+                });
+            }
+
+            if ($request->filled('contract_no')) {
+                $query->whereHas('salesContract', function ($q) use ($request) {
+                    $q->where('sales_contract_no', $request->contract_no);
+                });
+            }
+
+            if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+                $query->whereBetween('date', [$request->contract_date_from, $request->contract_date_to]);
+            } elseif ($request->filled('contract_date_from')) {
+                $query->whereDate('date', '>=', $request->contract_date_from);
+            } elseif ($request->filled('contract_date_to')) {
+                $query->whereDate('date', '<=', $request->contract_date_to);
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->whereHas('salesContract', function ($q) use ($search) {
+                    $q->where('sales_contract_no', 'like', "%{$search}%")
+                        ->orWhere('buyer_name', 'like', "%{$search}%");
+                });
+            }
+
+            $imports = $query->orderBy('date', 'desc')->get();
+
+            $pdf = Pdf::loadView('sales-imports.pdf', compact('imports'))
+                ->setPaper('a4', 'landscape');
+
+            return $pdf->download('sales_imports_' . now()->format('Ymd_His') . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('PDF export (sales imports) failed: ' . $e->getMessage(), ['exception' => $e]);
+            abort(500, 'PDF generation failed. Check application logs for details.');
+        }
+    }
+
+    /**
+     * Export detailed Sales Import Report (Excel)
+     */
+    public function exportReport(Request $request)
+    {
+        $query = BtbLc::with(['import', 'contract']);
 
         if ($request->filled('buyer_id')) {
-            $query->whereHas('salesContract', function ($q) use ($request) {
+            $query->whereHas('contract', function ($q) use ($request) {
                 $q->where('buyer_id', $request->buyer_id);
             });
         }
 
         if ($request->filled('contract_no')) {
-            $query->whereHas('salesContract', function ($q) use ($request) {
+            $query->whereHas('contract', function ($q) use ($request) {
                 $q->where('sales_contract_no', $request->contract_no);
             });
         }
@@ -245,18 +297,68 @@ class SalesImportController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('salesContract', function ($q) use ($search) {
+            $query->whereHas('contract', function ($q) use ($search) {
                 $q->where('sales_contract_no', 'like', "%{$search}%")
                     ->orWhere('buyer_name', 'like', "%{$search}%");
             });
         }
 
-        $imports = $query->orderBy('date', 'desc')->get();
+        $rows = $query->orderBy('date', 'desc')->get();
 
-        $pdf = Pdf::loadView('sales-imports.pdf', compact('imports'))
-            ->setPaper('a4', 'landscape');
+        return Excel::download(new SalesImportReportExport($rows), 'sales_import_report_' . now()->format('Ymd_His') . '.xlsx');
+    }
 
-        return $pdf->download('sales_imports_' . now()->format('Ymd_His') . '.pdf');
+    /**
+     * Export detailed Sales Import Report to PDF
+     */
+    public function exportReportPdf(Request $request)
+    {
+        try {
+            if (!class_exists(Pdf::class)) {
+                abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
+            }
+
+            $query = BtbLc::with(['import', 'contract']);
+
+            if ($request->filled('buyer_id')) {
+                $query->whereHas('contract', function ($q) use ($request) {
+                    $q->where('buyer_id', $request->buyer_id);
+                });
+            }
+
+            if ($request->filled('contract_no')) {
+                $query->whereHas('contract', function ($q) use ($request) {
+                    $q->where('sales_contract_no', $request->contract_no);
+                });
+            }
+
+            if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+                $query->whereBetween('date', [$request->contract_date_from, $request->contract_date_to]);
+            } elseif ($request->filled('contract_date_from')) {
+                $query->whereDate('date', '>=', $request->contract_date_from);
+            } elseif ($request->filled('contract_date_to')) {
+                $query->whereDate('date', '<=', $request->contract_date_to);
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->whereHas('contract', function ($q) use ($search) {
+                    $q->where('sales_contract_no', 'like', "%{$search}%")
+                        ->orWhere('buyer_name', 'like', "%{$search}%");
+                });
+            }
+
+            $rows = $query->orderBy('date', 'desc')->get();
+
+            $pdf = Pdf::loadView('reports.sales_import_report_pdf', compact('rows'))
+                ->setPaper('a4', 'landscape');
+
+            return $pdf->download('sales_import_report_' . now()->format('Ymd_His') . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('PDF export (sales import report) failed: ' . $e->getMessage(), ['exception' => $e]);
+            abort(500, 'PDF generation failed. Check application logs for details.');
+        }
     }
 
     private function normalizeRowKeys($row)

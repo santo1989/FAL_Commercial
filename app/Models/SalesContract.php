@@ -50,4 +50,12 @@ class SalesContract extends Model
         return $this->imports->sum('print_emb_value') ?? 0;
     }
     
+    /**
+     * BTB LCs linked to this contract
+     */
+    public function btbLcs()
+    {
+        return $this->hasMany(BtbLc::class, 'contract_id');
+    }
+    
 }

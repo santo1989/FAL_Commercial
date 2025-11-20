@@ -10,6 +10,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesContractController;
 use App\Http\Controllers\SalesExportController;
 use App\Http\Controllers\SalesImportController;
+use App\Http\Controllers\BtbLcController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Models\Notification;
@@ -133,12 +134,27 @@ Route::middleware('auth')->group(function () {
     // Export routes for filtered lists (place before resource routes to avoid collisions)
     Route::get('sales-imports/export', [SalesImportController::class, 'export'])->name('sales-imports.export');
     Route::get('sales-exports/export', [SalesExportController::class, 'export'])->name('sales-exports.export');
+    // Detailed report exports (Excel & PDF)
+    Route::get('sales-imports/report', [SalesImportController::class, 'exportReport'])->name('sales-imports.report');
+    Route::get('sales-imports/report/pdf', [SalesImportController::class, 'exportReportPdf'])->name('sales-imports.report.pdf');
+    Route::get('sales-exports/report', [SalesExportController::class, 'exportReport'])->name('sales-exports.report');
+    Route::get('sales-exports/report/pdf', [SalesExportController::class, 'exportReportPdf'])->name('sales-exports.report.pdf');
     // PDF routes for filtered import/export lists (also before their resource routes)
     Route::get('sales-imports/pdf', [SalesImportController::class, 'exportPdf'])->name('sales-imports.pdf');
     Route::get('sales-exports/pdf', [SalesExportController::class, 'exportPdf'])->name('sales-exports.pdf');
 
     Route::resource('sales-imports', SalesImportController::class);
     Route::resource('sales-exports', SalesExportController::class);
+    // BTB LC resource (tracks LC information linked to contracts and imports)
+    // Helper endpoint: fetch imports for a contract (returns btb_lc_no, import_id, date)
+    Route::get('btb-lcs/imports-by-contract/{contract}', [BtbLcController::class, 'importsByContract'])
+        ->name('btb-lcs.imports-by-contract');
+
+    // Exports for BTB LCs (place before the resource route to avoid collisions)
+    Route::get('btb-lcs/export', [BtbLcController::class, 'export'])->name('btb-lcs.export');
+    Route::get('btb-lcs/pdf', [BtbLcController::class, 'exportPdf'])->name('btb-lcs.pdf');
+
+    Route::resource('btb-lcs', BtbLcController::class);
     // Add these routes
     Route::post('/sales-contracts/{contract}/ud', [SalesContractController::class, 'storeUD'])->name('sales-contracts.ud.store');
     Route::post('/sales-contracts/{contract}/revised', [SalesContractController::class, 'storeRevised'])->name('sales-contracts.revised.store');

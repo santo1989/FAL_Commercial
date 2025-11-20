@@ -38,7 +38,7 @@
 
                     <div class="card-body">
 
-                        @can('Admin')
+                        @can('General')
                             <div class="row justify-content-center">
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
@@ -55,12 +55,12 @@
                                     </a>
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
-
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
-                                        href="{{ route('divisions.index') }}">
-                                        <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                        Division Management
+                                        href="{{ route('tnas.index') }}">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                        TNA
                                     </a>
+                                </div>
                                 </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
@@ -186,7 +186,7 @@
                         @endcan
                         @can('Marchendiser')
                             <div class="row justify-content-center">
-                                {{-- <div class="col-3 pt-1 pb-1">
+                                <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
                                         href="{{ route('home') }}">
                                         <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div>
@@ -199,7 +199,7 @@
                                         <div class="sb-nav-link-icon"><i class="far fa-address-card"></i></div>
                                         Profile
                                     </a>
-                                </div> --}}
+                                </div>
                                 <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
                                         href="{{ route('tnas.index') }}">
@@ -213,6 +213,13 @@
                         @endcan
                         @can('SuperVisor')
                             <div class="row justify-content-center">
+                                <div class="col-3 pt-1 pb-1">
+                                    <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
+                                        href="{{ route('home') }}">
+                                        <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div>
+                                        Home
+                                    </a>
+                                </div>
                                  <div class="col-3 pt-1 pb-1">
                                     <a class="btn btn-sm btn-outline-primary" style="width: 10rem;"
                                         href="{{ route('buyers.index') }}">

@@ -13,7 +13,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
 use App\Exports\SalesExportsExport;
+use App\Exports\SalesExportReportExport;
 use Barryvdh\DomPDF\Facades\Pdf;
+use App\Models\BtbLc;
+use Illuminate\Support\Facades\Log;
 
 class SalesExportController extends Controller
 {
@@ -262,10 +265,59 @@ class SalesExportController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        if (!class_exists(Pdf::class)) {
-            abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
-        }
+        try {
+            if (!class_exists(Pdf::class)) {
+                abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
+            }
 
+            $query = SalesExport::with('salesContract');
+
+            if ($request->filled('buyer_id')) {
+                $query->whereHas('salesContract', function ($q) use ($request) {
+                    $q->where('buyer_id', $request->buyer_id);
+                });
+            }
+
+            if ($request->filled('contract_no')) {
+                $query->whereHas('salesContract', function ($q) use ($request) {
+                    $q->where('sales_contract_no', $request->contract_no);
+                });
+            }
+
+            if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+                $query->whereBetween('shipment_date', [$request->contract_date_from, $request->contract_date_to]);
+            } elseif ($request->filled('contract_date_from')) {
+                $query->whereDate('shipment_date', '>=', $request->contract_date_from);
+            } elseif ($request->filled('contract_date_to')) {
+                $query->whereDate('shipment_date', '<=', $request->contract_date_to);
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->whereHas('salesContract', function ($q) use ($search) {
+                    $q->where('sales_contract_no', 'like', "%{$search}%")
+                        ->orWhere('buyer_name', 'like', "%{$search}%");
+                });
+            }
+
+            $exports = $query->orderBy('shipment_date', 'desc')->get();
+
+            $pdf = Pdf::loadView('sales-exports.pdf', compact('exports'))
+                ->setPaper('a4', 'landscape');
+
+            return $pdf->download('sales_exports_' . now()->format('Ymd_His') . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('PDF export (sales exports) failed: ' . $e->getMessage(), ['exception' => $e]);
+            abort(500, 'PDF generation failed. Check application logs for details.');
+        }
+    }
+
+    /**
+     * Export detailed Sales Export Report (Excel)
+     */
+    public function exportReport(Request $request)
+    {
         $query = SalesExport::with('salesContract');
 
         if ($request->filled('buyer_id')) {
@@ -296,12 +348,59 @@ class SalesExportController extends Controller
             });
         }
 
-        $exports = $query->orderBy('shipment_date', 'desc')->get();
+        $rows = $query->orderBy('shipment_date', 'desc')->get();
 
-        $pdf = Pdf::loadView('sales-exports.pdf', compact('exports'))
-            ->setPaper('a4', 'landscape');
+        return Excel::download(new SalesExportReportExport($rows), 'sales_export_report_' . now()->format('Ymd_His') . '.xlsx');
+    }
 
-        return $pdf->download('sales_exports_' . now()->format('Ymd_His') . '.pdf');
+    public function exportReportPdf(Request $request)
+    {
+        try {
+            if (!class_exists(Pdf::class)) {
+                abort(500, 'PDF generation library not installed. Run: composer require barryvdh/laravel-dompdf');
+            }
+
+            $query = SalesExport::with('salesContract');
+
+            if ($request->filled('buyer_id')) {
+                $query->whereHas('salesContract', function ($q) use ($request) {
+                    $q->where('buyer_id', $request->buyer_id);
+                });
+            }
+
+            if ($request->filled('contract_no')) {
+                $query->whereHas('salesContract', function ($q) use ($request) {
+                    $q->where('sales_contract_no', $request->contract_no);
+                });
+            }
+
+            if ($request->filled('contract_date_from') && $request->filled('contract_date_to')) {
+                $query->whereBetween('shipment_date', [$request->contract_date_from, $request->contract_date_to]);
+            } elseif ($request->filled('contract_date_from')) {
+                $query->whereDate('shipment_date', '>=', $request->contract_date_from);
+            } elseif ($request->filled('contract_date_to')) {
+                $query->whereDate('shipment_date', '<=', $request->contract_date_to);
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->whereHas('salesContract', function ($q) use ($search) {
+                    $q->where('sales_contract_no', 'like', "%{$search}%")
+                        ->orWhere('buyer_name', 'like', "%{$search}%");
+                });
+            }
+
+            $rows = $query->orderBy('shipment_date', 'desc')->get();
+
+            $pdf = Pdf::loadView('reports.sales_export_report_pdf', compact('rows'))
+                ->setPaper('a4', 'landscape');
+
+            return $pdf->download('sales_export_report_' . now()->format('Ymd_His') . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('PDF export (sales export report) failed: ' . $e->getMessage(), ['exception' => $e]);
+            abort(500, 'PDF generation failed. Check application logs for details.');
+        }
     }
 
 
