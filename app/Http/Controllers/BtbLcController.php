@@ -238,4 +238,180 @@ class BtbLcController extends Controller
         $btbLc->delete();
         return Redirect::route('btb-lcs.index')->with('message', 'BTB LC record deleted');
     }
+
+    /**
+     * Display BTB/LC Value Report
+     */
+    public function report(Request $request)
+    {
+        // Get unique banks for filter
+        $banks = BtbLc::distinct()->pluck('bank_name')->filter()->sort()->values();
+
+        // Set default date range (last 12 months)
+        $dateFrom = $request->get('date_from', now()->subYear()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+
+        // Build query
+        $query = BtbLc::with(['contract', 'import'])
+            ->whereNotNull('aceptence_value')
+            ->whereDate('date', '>=', $dateFrom)
+            ->whereDate('date', '<=', $dateTo);
+
+        if ($request->filled('bank_name')) {
+            $query->where('bank_name', $request->bank_name);
+        }
+
+        $records = $query->get();
+
+        // Generate months between date range
+        $months = $this->generateMonthRange($dateFrom, $dateTo);
+
+        // Organize data by bank and category
+        $reportData = $this->organizeReportData($records, $months);
+
+        return view('btb-lcs.report', compact('reportData', 'months', 'banks'));
+    }
+
+    /**
+     * Export BTB/LC Value Report to Excel
+     */
+    public function reportExcel(Request $request)
+    {
+        // Get unique banks for filter
+        $banks = BtbLc::distinct()->pluck('bank_name')->filter()->sort()->values();
+
+        // Set default date range
+        $dateFrom = $request->get('date_from', now()->subYear()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+
+        // Build query
+        $query = BtbLc::with(['contract', 'import'])
+            ->whereNotNull('aceptence_value')
+            ->whereDate('date', '>=', $dateFrom)
+            ->whereDate('date', '<=', $dateTo);
+
+        if ($request->filled('bank_name')) {
+            $query->where('bank_name', $request->bank_name);
+        }
+
+        $records = $query->get();
+
+        // Generate months
+        $months = $this->generateMonthRange($dateFrom, $dateTo);
+
+        // Organize data
+        $reportData = $this->organizeReportData($records, $months);
+
+        return Excel::download(
+            new \App\Exports\BtbLcReportExport($reportData, $months),
+            'btblc_value_report_' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
+
+    /**
+     * Generate month range (e.g., Jul'25, Aug'25, ...)
+     */
+    private function generateMonthRange($dateFrom, $dateTo)
+    {
+        $months = [];
+        $start = Carbon::parse($dateFrom)->startOfMonth();
+        $end = Carbon::parse($dateTo)->endOfMonth();
+
+        while ($start <= $end) {
+            $months[] = $start->format("M'y"); // Jul'25
+            $start->addMonth();
+        }
+
+        return $months;
+    }
+
+    /**
+     * Organize data by bank group and category
+     */
+    private function organizeReportData($records, $months)
+    {
+        $reportData = [];
+
+        // Define bank groups and their categories
+        $bankGroups = [
+            'BRAC Bank' => [
+                'EDF-BRAC Bank',
+                'ABP-BRAC',
+                'UPAS-BRAC',
+                'DPLC-BRAC Bank-Non-Accepted',
+                'Sight LC-BRAC Bank-Non-Accepted',
+                'Other-BRAC'
+            ],
+            'Prime Bank' => [
+                'EDF-Prime Bank',
+                'ABP-Prime',
+                'UPAS-Prime',
+                'DPLC-Prime Bank-Non-Accepted',
+                'Sight LC-Prime Bank-Non-Accepted',
+                'Other-Prime'
+            ]
+        ];
+
+        foreach ($bankGroups as $bankGroup => $categories) {
+            $reportData[$bankGroup] = [];
+
+            foreach ($categories as $category) {
+                $monthlyData = array_fill_keys($months, 0);
+
+                foreach ($records as $record) {
+                    // Match records to categories based on bank_name and aceptence_type
+                    if ($this->matchesCategory($record, $category, $bankGroup)) {
+                        $monthKey = Carbon::parse($record->date)->format("M'y");
+                        if (isset($monthlyData[$monthKey])) {
+                            $monthlyData[$monthKey] += floatval($record->aceptence_value ?? 0);
+                        }
+                    }
+                }
+
+                $reportData[$bankGroup][$category] = $monthlyData;
+            }
+        }
+
+        return $reportData;
+    }
+
+    /**
+     * Match record to category based on bank and type
+     */
+    private function matchesCategory($record, $category, $bankGroup)
+    {
+        $bankName = strtolower($record->bank_name ?? '');
+        $aceptenceType = strtolower($record->aceptence_type ?? '');
+
+        // Extract bank identifier
+        $bankIdentifier = strtolower($bankGroup);
+
+        if (!str_contains($bankName, $bankIdentifier)) {
+            return false;
+        }
+
+        // Match category patterns
+        if (str_contains($category, 'EDF')) {
+            return str_contains($aceptenceType, 'edf');
+        } elseif (str_contains($category, 'ABP')) {
+            return str_contains($aceptenceType, 'abp');
+        } elseif (str_contains($category, 'UPAS')) {
+            return str_contains($aceptenceType, 'upas');
+        } elseif (str_contains($category, 'DPLC')) {
+            return str_contains($aceptenceType, 'dplc') || str_contains($aceptenceType, 'da');
+        } elseif (str_contains($category, 'Sight LC')) {
+            return str_contains($aceptenceType, 'sight') || str_contains($aceptenceType, 'lc');
+        } elseif (str_contains($category, 'Other')) {
+            // Other catches anything not matched above
+            return !str_contains($aceptenceType, 'edf') &&
+                   !str_contains($aceptenceType, 'abp') &&
+                   !str_contains($aceptenceType, 'upas') &&
+                   !str_contains($aceptenceType, 'dplc') &&
+                   !str_contains($aceptenceType, 'da') &&
+                   !str_contains($aceptenceType, 'sight') &&
+                   !str_contains($aceptenceType, 'lc');
+        }
+
+        return false;
+    }
 }

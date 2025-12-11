@@ -51,30 +51,53 @@ class BtbLcsExport implements FromCollection, WithHeadings, WithMapping, ShouldA
     public function headings(): array
     {
         return [
-            'ID', 'Contract No', 'BTB/LC No', 'Import ID', 'Date', 'Bank', 'Aceptence Date', 'Aceptence Value', 'Aceptence Type', 'Tenor Days', 'Mature Date', 'Repayment Date', 'Repayment Value', 'Closing Balance', 'Procurement Type', 'Import Type'
+            'Sl',
+            'Export Contract No',
+            'BTBLC No',
+            'BTBLC Date',
+            'Import Invoice ID',
+            'Product Type',
+            'Name of BTBLC Beneficiery',
+            'Due dt of Beneficiery',
+            'Paid dt to Beneficiery',
+            'Bank',
+            'BTBLC Aceptence Date',
+            'BTBLC Aceptence Value',
+            'Aceptence Type',
+            'Tenor Days',
+            'BTBLC Maturity Date',
+            'Repayment Date',
+            'Repaid Amount',
+            'BTB Closing Payable Amount',
+            'Procurement Type'
         ];
     }
 
     public function map($row): array
     {
+        static $counter = 0;
+        $counter++;
+        
         return [
-            $row->id,
-            optional($row->contract)->sales_contract_no,
-            $row->btb_lc_no,
-            $row->import_id,
-            // ensure date formatting works even if not Carbon instance
-            (is_object($row->date) && method_exists($row->date, 'format')) ? $row->date->format('Y-m-d') : ($row->date ? \Carbon\Carbon::parse($row->date)->format('Y-m-d') : null),
-            $row->bank_name,
-            (is_object($row->aceptence_date) && method_exists($row->aceptence_date, 'format')) ? $row->aceptence_date->format('Y-m-d') : ($row->aceptence_date ? \Carbon\Carbon::parse($row->aceptence_date)->format('Y-m-d') : null),
-            $row->aceptence_value,
-            $row->aceptence_type,
-            $row->tenor_days,
-            (is_object($row->mature_date) && method_exists($row->mature_date, 'format')) ? $row->mature_date->format('Y-m-d') : ($row->mature_date ? \Carbon\Carbon::parse($row->mature_date)->format('Y-m-d') : null),
-            (is_object($row->repayment_date) && method_exists($row->repayment_date, 'format')) ? $row->repayment_date->format('Y-m-d') : ($row->repayment_date ? \Carbon\Carbon::parse($row->repayment_date)->format('Y-m-d') : null),
-            $row->repayment_value,
-            $row->closing_balance,
-            $row->proclument_type,
-            $row->import_type,
+            $counter, // Sl - Auto incremental
+            optional($row->contract)->sales_contract_no, // Export Contract No
+            $row->btb_lc_no, // BTBLC No
+            (is_object($row->date) && method_exists($row->date, 'format')) ? $row->date->format('Y-m-d') : ($row->date ? \Carbon\Carbon::parse($row->date)->format('Y-m-d') : null), // BTBLC Date
+            $row->import_id, // Import Invoice ID
+            $row->import_type, // Product Type
+            optional($row->import)->description, // Name of BTBLC Beneficiery (from sales_imports.description)
+            (is_object($row->mature_date) && method_exists($row->mature_date, 'format')) ? $row->mature_date->format('Y-m-d') : ($row->mature_date ? \Carbon\Carbon::parse($row->mature_date)->format('Y-m-d') : null), // Due dt of Beneficiery
+            '', // Paid dt to Beneficiery (empty/not mapped)
+            $row->bank_name, // Bank
+            (is_object($row->aceptence_date) && method_exists($row->aceptence_date, 'format')) ? $row->aceptence_date->format('Y-m-d') : ($row->aceptence_date ? \Carbon\Carbon::parse($row->aceptence_date)->format('Y-m-d') : null), // BTBLC Aceptence Date
+            $row->aceptence_value, // BTBLC Aceptence Value
+            $row->aceptence_type, // Aceptence Type
+            $row->tenor_days, // Tenor Days
+            (is_object($row->mature_date) && method_exists($row->mature_date, 'format')) ? $row->mature_date->format('Y-m-d') : ($row->mature_date ? \Carbon\Carbon::parse($row->mature_date)->format('Y-m-d') : null), // BTBLC Maturity Date
+            (is_object($row->repayment_date) && method_exists($row->repayment_date, 'format')) ? $row->repayment_date->format('Y-m-d') : ($row->repayment_date ? \Carbon\Carbon::parse($row->repayment_date)->format('Y-m-d') : null), // Repayment Date
+            $row->repayment_value, // Repaid Amount
+            $row->closing_balance, // BTB Closing Payable Amount
+            $row->proclument_type, // Procurement Type
         ];
     }
 }

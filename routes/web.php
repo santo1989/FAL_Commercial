@@ -151,6 +151,8 @@ Route::middleware('auth')->group(function () {
         ->name('btb-lcs.imports-by-contract');
 
     // Exports for BTB LCs (place before the resource route to avoid collisions)
+    Route::get('btb-lcs/report', [BtbLcController::class, 'report'])->name('btb-lcs.report');
+    Route::get('btb-lcs/report-excel', [BtbLcController::class, 'reportExcel'])->name('btb-lcs.report.excel');
     Route::get('btb-lcs/export', [BtbLcController::class, 'export'])->name('btb-lcs.export');
     Route::get('btb-lcs/pdf', [BtbLcController::class, 'exportPdf'])->name('btb-lcs.pdf');
 

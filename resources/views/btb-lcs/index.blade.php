@@ -14,8 +14,8 @@
                     <a href="{{ route('btb-lcs.create') }}" class="btn btn-primary">New BTB LC</a>
                     @php $qs = http_build_query(request()->query()); @endphp
                     <a href="{{ route('btb-lcs.export') }}{{ $qs ? '?'.$qs : '' }}" class="btn btn-success">Export Excel</a>
-                    <a href="{{ route('btb-lcs.pdf') }}{{ $qs ? '?'.$qs : '' }}" class="btn btn-secondary me-1">Download PDF</a>
-                    <a href="{{ route('btb-lcs.export') }}{{ $qs ? '?'.$qs : '' }}" class="btn btn-primary">Report</a>
+                    <a href="{{ route('btb-lcs.pdf') }}{{ $qs ? '?'.$qs : '' }}" class="btn btn-secondary">Download PDF</a>
+                    <a href="{{ route('btb-lcs.report') }}" class="btn btn-info"><i class="fas fa-chart-bar"></i> Value Report</a>
                 </div>
             </div>
         </div>
